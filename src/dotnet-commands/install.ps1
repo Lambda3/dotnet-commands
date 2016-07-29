@@ -1,5 +1,5 @@
 $ErrorActionPreference = "Stop"
-$uri="https://github.com/Lambda3/dotnet-commands/releases/download/0.0.1-alpha1-build5/dotnet-commands.zip"
+$uri="https://github.com/Lambda3/dotnet-commands/releases/download/0.0.1-alpha1-build6/dotnet-commands.zip"
 $outFile=[System.IO.Path]::GetTempFileName()
 Invoke-WebRequest -uri $uri -OutFile $outFile
 Add-Type -assembly System.IO.Compression.FileSystem

@@ -84,7 +84,9 @@ namespace DotNetCommands
 
         private async Task<bool> RestoreAsync(string destinationDir)
         {
-            var projectJsons = Directory.EnumerateFiles(Path.Combine(destinationDir, "lib"), "project.json", SearchOption.AllDirectories);
+            var libDir = Path.Combine(destinationDir, "lib");
+            if (!Directory.Exists(libDir)) return true;
+            var projectJsons = Directory.EnumerateFiles(libDir, "project.json", SearchOption.AllDirectories);
             foreach (var projectJson in projectJsons)
             {
                 WriteLineIfVerbose($"Restoring '{projectJson}'");
