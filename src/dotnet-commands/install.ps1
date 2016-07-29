@@ -11,8 +11,8 @@ if ($LASTEXITCODE -ne 0) {
     Write-Host "Could not install."
     exit 1
 }
-$path = [Environment]::GetEnvironmentVariable("PATH")
-#Write-Host "Path is $path"
+$path = [Environment]::GetEnvironmentVariable("PATH", "User")
 $newPath = "$env:USERPROFILE\.nuget\commands\bin;$path"
-#Write-Host "NewPath is $newPath"
 [Environment]::SetEnvironmentVariable("PATH", $newPath, "User")
+$path = [Environment]::GetEnvironmentVariable("PATH", "User")
+$env:Path=$path
