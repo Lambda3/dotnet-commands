@@ -74,7 +74,6 @@ namespace DotNetCommands
                 using (var tempFileStream = File.OpenWrite(tempFilePath))
                     await nupkgResponse.Content.CopyToAsync(tempFileStream);
                 WriteLineIfVerbose($"Extracting to '{destinationDir}'.");
-                tempFilePath = @"C:\proj\dotnet-commands\src\dotnet-commands\bin\Debug\dotnet-commands.0.0.1-alpha1-build4.nupkg";
                 System.IO.Compression.ZipFile.ExtractToDirectory(tempFilePath, destinationDir);
             }
             var created = await CreateBinFileAsync(destinationDir);
