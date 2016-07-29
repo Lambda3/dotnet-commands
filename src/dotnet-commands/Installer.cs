@@ -6,6 +6,8 @@ using Newtonsoft.Json;
 using static DotNetCommands.Logger;
 using static System.Console;
 using System.IO;
+using System;
+using System.Diagnostics;
 
 namespace DotNetCommands
 {
@@ -72,10 +74,41 @@ namespace DotNetCommands
                 using (var tempFileStream = File.OpenWrite(tempFilePath))
                     await nupkgResponse.Content.CopyToAsync(tempFileStream);
                 WriteLineIfVerbose($"Extracting to '{destinationDir}'.");
+                tempFilePath = @"C:\proj\dotnet-commands\src\dotnet-commands\bin\Debug\dotnet-commands.0.0.1-alpha1-build4.nupkg";
                 System.IO.Compression.ZipFile.ExtractToDirectory(tempFilePath, destinationDir);
             }
             var created = await CreateBinFileAsync(destinationDir);
-            return created;
+            if (!created) return false;
+            var restored = await RestoreAsync(destinationDir);
+            return restored;
+        }
+
+        private async Task<bool> RestoreAsync(string destinationDir)
+        {
+            var projectJsons = Directory.EnumerateFiles(Path.Combine(destinationDir, "lib"), "project.json", SearchOption.AllDirectories);
+            foreach (var projectJson in projectJsons)
+            {
+                WriteLineIfVerbose($"Restoring '{projectJson}'");
+                var startInfo = new ProcessStartInfo
+                {
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true,
+                    FileName = "dotnet",
+                    Arguments = "restore",
+                    WorkingDirectory = Path.GetDirectoryName(projectJson)
+                };
+                using (var process = new Process { StartInfo = startInfo })
+                {
+                    process.Start();
+                    var textResult = await process.StandardOutput.ReadToEndAsync();
+                    WriteLine(textResult);
+                    process.WaitForExit();
+                    if (process.ExitCode != 0) return false;
+                }
+            }
+            return true;
         }
 
         private async Task<bool> CreateBinFileAsync(string destinationDir)
@@ -114,6 +147,7 @@ namespace DotNetCommands
             var binFile = commandDirectory.GetBinFile(mainFileName);
             var relativeMainFileName = commandDirectory.MakeRelativeToBaseDir(mainFilePath);
             File.WriteAllText(binFile, $@"@""%~dp0\{relativeMainFileName}"" %*");
+            WriteLineIfVerbose($"Wrote redirect file '{relativeMainFileName}'.");
             return true;
         }
 
@@ -123,7 +157,8 @@ namespace DotNetCommands
             public string Main { get; set; }
         }
 
-        private class Feed        {
+        private class Feed
+        {
             [JsonProperty("resources")]
             public IList<Resource> Resources { get; set; }
         }
