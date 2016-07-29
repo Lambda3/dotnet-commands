@@ -1,48 +1,54 @@
 {
-  "version": "0.0.1-alpha1-build2",
-  "description": "A .NET CLI Commands library.",
-  "authors": [
-    "giggio"
-  ],
-  "packOptions": {
-    "owners": [
-      "giggio"
+    "version": "0.0.1-alpha1-build3",
+    "description": "A .NET CLI Commands library.",
+    "authors": [
+        "giggio"
     ],
-    "repository": {
-      "type": "git",
-      "url": "https://github.com/Lambda3/dotnet-commands"
-    }
-  },
-  "publishOptions": {
-    "includeFiles": [
-      "dotnet-commands.cmd"
-    ]
-  },
-  "buildOptions": {
-    "debugType": "portable",
-    "emitEntryPoint": true,
-    "copyToOutput": {
-      "includeFiles": [
-        "dotnet-commands.cmd"
-      ]
-    }
-  },
-  "dependencies": {
-    "Microsoft.NETCore.App": {
-      "type": "platform",
-      "version": "1.0.0"
+    "packOptions": {
+        "owners": [
+            "giggio"
+        ],
+        "repository": {
+            "type": "git",
+            "url": "https://github.com/Lambda3/dotnet-commands"
+        },
+        "files": {
+            "mappings": {
+                "content/commandMetadata.json": "commandMetadata.json",
+                "lib/netcoreapp1.0/dotnet-commands.cmd": "dotnet-commands.cmd"
+            }
+        }
     },
-    "docopt.net": "0.6.1.8",
-    "System.Collections.NonGeneric": "4.0.1",
-    "Newtonsoft.Json": "9.0.1",
-    "System.IO.Compression.ZipFile": "4.0.1"
-  },
-  "frameworks": {
-    "netcoreapp1.0": {
-      "imports": [
-        "dnxcore50",
-        "portable-net45+win8"
-      ]
+    "publishOptions": {
+        "includeFiles": [
+            "dotnet-commands.cmd"
+        ]
+    },
+    "buildOptions": {
+        "debugType": "portable",
+        "emitEntryPoint": true,
+        "copyToOutput": {
+            "includeFiles": [
+                "dotnet-commands.cmd"
+            ]
+        }
+    },
+    "dependencies": {
+        "Microsoft.NETCore.App": {
+            "type": "platform",
+            "version": "1.0.0"
+        },
+        "docopt.net": "0.6.1.8",
+        "System.Collections.NonGeneric": "4.0.1",
+        "Newtonsoft.Json": "9.0.1",
+        "System.IO.Compression.ZipFile": "4.0.1"
+    },
+    "frameworks": {
+        "netcoreapp1.0": {
+            "imports": [
+                "dnxcore50",
+                "portable-net45+win8"
+            ]
+        }
     }
-  }
 }

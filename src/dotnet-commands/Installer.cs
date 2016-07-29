@@ -18,7 +18,7 @@ namespace DotNetCommands
         }
         private const string feedUrl = "https://api.nuget.org/v3/index.json";
 
-        public async Task InstallAsync(string command, bool force)
+        public async Task<bool> InstallAsync(string command, bool force, bool includePreRelease)
         {
             WriteLineIfVerbose($"Installing {command}.");
             string destinationDir;
@@ -28,17 +28,17 @@ namespace DotNetCommands
                 if (!feedResponse.IsSuccessStatusCode)
                 {
                     WriteLine($"Could not get feed details from '{feedUrl}'.");
-                    return;
+                    return false;
                 }
                 var feedContent = await feedResponse.Content.ReadAsStringAsync();
                 var resources = await Task.Factory.StartNew(() => JsonConvert.DeserializeObject<Feed>(feedContent));
                 var searchQueryServiceUrl = resources.Resources.First(r => r.Type == "SearchQueryService").Id;
-                var serviceUrl = $"{searchQueryServiceUrl}?q=packageid:{command}";
+                var serviceUrl = $"{searchQueryServiceUrl}?q=packageid:{command}{(includePreRelease ? "&prerelease=true" : "")}";
                 var serviceResponse = await client.GetAsync(serviceUrl);
                 if (!serviceResponse.IsSuccessStatusCode)
                 {
                     WriteLine($"Could not get service details from '{serviceUrl}'.");
-                    return;
+                    return false;
                 }
                 var serviceContent = await serviceResponse.Content.ReadAsStringAsync();
                 var service = await Task.Factory.StartNew(() => JsonConvert.DeserializeObject<Service>(serviceContent));
@@ -46,7 +46,7 @@ namespace DotNetCommands
                 if (version == null)
                 {
                     WriteLine("Could not find a version.");
-                    return;
+                    return false;
                 }
                 WriteLineIfVerbose($"Found version {version}.");
                 destinationDir = commandDirectory.GetDirectoryForPackage(command, version);
@@ -56,7 +56,7 @@ namespace DotNetCommands
                     if (force)
                         Directory.Delete(destinationDir, true);
                     else
-                        return;
+                        return true;
                 }
                 var packageBaseAddressUrl = resources.Resources.Last(r => r.Type.StartsWith("PackageBaseAddress")).Id;
                 var nupkgUrl = $"{packageBaseAddressUrl}{command.ToLower()}/{version.ToLower()}/{command.ToLower()}.{version.ToLower()}.nupkg";
@@ -65,7 +65,7 @@ namespace DotNetCommands
                 if (!nupkgResponse.IsSuccessStatusCode)
                 {
                     WriteLine($"Could not get nupkg from '{nupkgUrl}'.");
-                    return;
+                    return false;
                 }
                 var tempFilePath = Path.GetTempFileName();
                 WriteLineIfVerbose($"Saving to '{tempFilePath}'.");
@@ -74,18 +74,19 @@ namespace DotNetCommands
                 WriteLineIfVerbose($"Extracting to '{destinationDir}'.");
                 System.IO.Compression.ZipFile.ExtractToDirectory(tempFilePath, destinationDir);
             }
-            await CreateBinFileAsync(destinationDir);
+            var created = await CreateBinFileAsync(destinationDir);
+            return created;
         }
-        
-        private async Task CreateBinFileAsync(string destinationDir)
+
+        private async Task<bool> CreateBinFileAsync(string destinationDir)
         {
-            var commandMetadataTextFilePath = Path.Combine(destinationDir, "commandMetadata.json");
+            var commandMetadataTextFilePath = Path.Combine(destinationDir, "content", "commandMetadata.json");
             string mainFilePath;
             if (File.Exists(commandMetadataTextFilePath))
             {
                 var commandMetadataText = File.ReadAllText(commandMetadataTextFilePath);
                 var commandMetadata = await Task.Factory.StartNew(() => JsonConvert.DeserializeObject<CommandMetadata>(commandMetadataText));
-                mainFilePath = Path.Combine(destinationDir, commandMetadata.Main);
+                mainFilePath = Path.GetFullPath(Path.Combine(destinationDir, commandMetadata.Main));
             }
             else
             {
@@ -93,7 +94,7 @@ namespace DotNetCommands
                 if (!Directory.Exists(toolsDir))
                 {
                     WriteLine("This package does not have a tools directory.");
-                    return;
+                    return false;
                 }
                 mainFilePath = Directory.EnumerateFiles(toolsDir, "*.exe")
                     .Union(Directory.EnumerateFiles(toolsDir, "*.cmd"))
@@ -101,31 +102,32 @@ namespace DotNetCommands
                 if (string.IsNullOrEmpty(mainFilePath))
                 {
                     WriteLine("This package does not offer any executable.");
-                    return;
+                    return false;
                 }
             }
             var mainFileName = Path.GetFileName(mainFilePath);
             if (!mainFileName.StartsWith("dotnet-"))
             {
                 WriteLine("This package does not offer a .NET CLI extension tool.");
-                return;
+                return false;
             }
             var binFile = commandDirectory.GetBinFile(mainFileName);
             var relativeMainFileName = commandDirectory.MakeRelativeToBaseDir(mainFilePath);
             File.WriteAllText(binFile, $@"@""%~dp0\{relativeMainFileName}"" %*");
+            return true;
         }
-        
+
         private class CommandMetadata
         {
             [JsonProperty("main")]
             public string Main { get; set; }
         }
-        
+
         private class Feed        {
             [JsonProperty("resources")]
             public IList<Resource> Resources { get; set; }
         }
-        
+
         private class Resource
         {
             [JsonProperty("@id")]
@@ -139,7 +141,7 @@ namespace DotNetCommands
             [JsonProperty("data")]
             public IList<ServiceData> Data { get; set; }
         }
-        
+
         private class ServiceData
         {
             [JsonProperty("version")]
