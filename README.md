@@ -10,11 +10,19 @@ This is a community project, free and open source. Everyone is invited to contri
 
 ## Installing
 
-On Windows, using powershell, run:
+On Windows, run:
 
-```powershell
-Install-Package CodeCracker.CSharp
-```
+### Powershell
+````powershell
+&{$wc=New-Object System.Net.WebClient;$wc.Proxy=[System.Net.WebRequest]::DefaultWebProxy;$wc.Proxy.Credentials=[System.Net.CredentialCache]::DefaultNetworkCredentials;Invoke-Expression($wc.DownloadString('https://raw.githubusercontent.com/Lambda3/dotnet-commands/master/src/dotnet-commands/install.ps1'))}
+````
+
+### CMD
+````cmd
+@powershell -NoProfile -ExecutionPolicy unrestricted -Command "&{$wc=New-Object System.Net.WebClient;$wc.Proxy=[System.Net.WebRequest]::DefaultWebProxy;$wc.Proxy.Credentials=[System.Net.CredentialCache]::DefaultNetworkCredentials;Invoke-Expression($wc.DownloadString('https://raw.githubusercontent.com/Lambda3/dotnet-commands/master/src/dotnet-commands/install.ps1'))}"
+````
+
+On Linux, TBD.
 
 ## Running
 
@@ -42,7 +50,7 @@ You can try to install `dotnet-foo`, a library to try.
 dotnet commands install dotnet-foo
 ```
 
-And you can then use it like so:+1:
+And you can then use `dotnet-foo` like this:
 
 ```powershell
 dotnet foo
