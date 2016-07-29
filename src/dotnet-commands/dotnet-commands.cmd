@@ -1,0 +1,1 @@
+@dotnet dotnet-commands.dll %*
