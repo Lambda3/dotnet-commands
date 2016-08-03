@@ -93,7 +93,7 @@ namespace DotNetCommands
             {
                 var runtimeConfigDevJsonFile = $"{command}.runtimeconfig.dev.json";
                 var runtimeConfigDevJsonFullPath = Path.Combine(Path.GetDirectoryName(commandDll), runtimeConfigDevJsonFile);
-                if (!File.Exists(runtimeConfigDevJsonFullPath))
+                if (File.Exists(runtimeConfigDevJsonFullPath))
                 {
                     WriteLineIfVerbose($"File '{runtimeConfigDevJsonFullPath}' already exists, not creating.");
                     return true;
