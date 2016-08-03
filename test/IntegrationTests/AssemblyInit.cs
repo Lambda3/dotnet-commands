@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 
 namespace IntegrationTests
 {
@@ -11,6 +12,7 @@ namespace IntegrationTests
 #pragma warning restore CC0057 // Unused parameters
         {
             DotNetCommands.Logger.IsVerbose = true;
+            DotNetCommands.Logger.SetLogger(msg => Console.WriteLine($"[Tool {DateTime.Now.ToString("MM/dd/yy hh:mm:ss")}] {msg}"));
         }
     }
 }

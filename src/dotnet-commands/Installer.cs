@@ -63,6 +63,7 @@ namespace DotNetCommands
     ""additionalProbingPaths"": [ """ + escapedPackagesDir + @""" ]
   }
 }");
+                WriteLineIfVerbose($"Wrote '{runtimeConfigDevJsonFullPath}' for correct probing paths.");
             }
             return true;
         }
@@ -133,7 +134,7 @@ namespace DotNetCommands
             var binFile = commandDirectory.GetBinFile(mainFileName);
             var relativeMainFileName = commandDirectory.MakeRelativeToBaseDir(mainFilePath);
             File.WriteAllText(binFile, $@"@""%~dp0\{relativeMainFileName}"" %*");
-            WriteLineIfVerbose($"Wrote redirect file '{relativeMainFileName}'.");
+            WriteLineIfVerbose($"Wrote redirect file '{binFile}' pointing to '{relativeMainFileName}'.");
             return true;
         }
 
