@@ -18,8 +18,7 @@
                 "lib/netcoreapp1.0/dotnet-commands.cmd": "dotnet-commands.cmd",
                 "lib/netcoreapp1.0/project.json": "project.json",
                 "lib/netcoreapp1.0/project.lock.json": "project.lock.json",
-                "lib/netcoreapp1.0/dotnet-commands.deps.json": "bin/**/netcoreapp1.0/dotnet-commands.deps.json",
-                "lib/netcoreapp1.0/dotnet-commands.runtimeconfig.dev.json": "bin/**/netcoreapp1.0/dotnet-commands.runtimeconfig.dev.json"
+                "lib/netcoreapp1.0/dotnet-commands.deps.json": "bin/**/netcoreapp1.0/dotnet-commands.deps.json"
             }
         }
     },

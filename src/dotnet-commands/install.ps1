@@ -1,5 +1,5 @@
 $ErrorActionPreference = "Stop"
-$uri="https://github.com/Lambda3/dotnet-commands/releases/download/0.0.1-alpha1-build6/dotnet-commands.zip"
+$uri="https://github.com/Lambda3/dotnet-commands/releases/download/0.0.1-alpha1-build7/dotnet-commands.zip"
 $outFile=[System.IO.Path]::GetTempFileName()
 Invoke-WebRequest -uri $uri -OutFile $outFile
 Add-Type -assembly System.IO.Compression.FileSystem
@@ -14,5 +14,4 @@ if ($LASTEXITCODE -ne 0) {
 $path = [Environment]::GetEnvironmentVariable("PATH", "User")
 $newPath = "$env:USERPROFILE\.nuget\commands\bin;$path"
 [Environment]::SetEnvironmentVariable("PATH", $newPath, "User")
-$path = [Environment]::GetEnvironmentVariable("PATH", "User")
-$env:Path=$path
+$env:Path="$env:USERPROFILE\.nuget\commands\bin;$env:Path"

@@ -78,8 +78,43 @@ namespace DotNetCommands
             }
             var created = await CreateBinFileAsync(destinationDir);
             if (!created) return false;
+            var added = CreateRuntimeConfigDevJsonFile(destinationDir, command);
+            if (!added) return false;
             var restored = await RestoreAsync(destinationDir);
             return restored;
+        }
+
+        private bool CreateRuntimeConfigDevJsonFile(string destinationDir, string command)
+        {
+            var libDir = Path.Combine(destinationDir, "lib");
+            if (!Directory.Exists(libDir)) return true;
+            var comandDlls = Directory.EnumerateFiles(libDir, $"{command}.dll", SearchOption.AllDirectories);
+            foreach (var commandDll in comandDlls)
+            {
+                var runtimeConfigDevJsonFile = $"{command}.runtimeconfig.dev.json";
+                var runtimeConfigDevJsonFullPath = Path.Combine(Path.GetDirectoryName(commandDll), runtimeConfigDevJsonFile);
+                if (!File.Exists(runtimeConfigDevJsonFullPath))
+                {
+                    WriteLineIfVerbose($"File '{runtimeConfigDevJsonFullPath}' already exists, not creating.");
+                    return true;
+                }
+                var homeDir = Environment.GetEnvironmentVariable("HOME") ?? Environment.GetEnvironmentVariable("userprofile");
+                if (string.IsNullOrWhiteSpace(homeDir))
+                {
+                    WriteLineIfVerbose("Could not find home dir.");
+                    return false;
+                }
+                WriteLineIfVerbose($"Creating '{runtimeConfigDevJsonFile}'");
+                var packagesDir = Path.Combine(homeDir, ".nuget", "packages");
+                var escapedPackagesDir = JsonConvert.SerializeObject(packagesDir);
+                escapedPackagesDir = escapedPackagesDir.Substring(1, escapedPackagesDir.Length - 2 );
+                File.WriteAllText(runtimeConfigDevJsonFullPath, @"{
+  ""runtimeOptions"": {
+    ""additionalProbingPaths"": [ """ + escapedPackagesDir + @""" ]
+  }
+}");
+            }
+            return true;
         }
 
         private async Task<bool> RestoreAsync(string destinationDir)
