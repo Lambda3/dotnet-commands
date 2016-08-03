@@ -7,13 +7,14 @@ using System.Threading.Tasks;
 namespace IntegrationTests
 {
     [TestClass]
-    public class InstallerTestForGenericTool
+    public class UninstallerTestForGenericTool
     {
         private const string packageName = "dotnet-foo";
         private static CommandDirectoryCleanup commandDirectoryCleanup;
         private static Installer installer;
-        private static bool installed;
         private static string baseDir;
+        private static Uninstaller uninstaller;
+        private static bool uninstalled;
 
         [ClassInitialize]
 #pragma warning disable CC0057 // Unused parameters
@@ -23,7 +24,10 @@ namespace IntegrationTests
             commandDirectoryCleanup = new CommandDirectoryCleanup();
             baseDir = commandDirectoryCleanup.CommandDirectory.BaseDir;
             installer = new Installer(commandDirectoryCleanup.CommandDirectory);
-            installed = await installer.InstallAsync(packageName, force: false, includePreRelease: false);
+            var installed = await installer.InstallAsync(packageName, force: false, includePreRelease: false);
+            installed.Should().BeTrue();
+            uninstaller = new Uninstaller(commandDirectoryCleanup.CommandDirectory);
+            uninstalled = await uninstaller.UninstallAsync(packageName);
         }
 
         [ClassCleanup]
@@ -33,13 +37,12 @@ namespace IntegrationTests
         }
 
         [TestMethod]
-        public void InstalledSuccessfully() => installed.Should().BeTrue();
+        public void UninstalledSuccessfully() => uninstalled.Should().BeTrue();
 
         [TestMethod]
-        public void WroteRedirectFile() => File.Exists(Path.Combine(baseDir, "bin", $"{packageName}.cmd")).Should().BeTrue();
+        public void DeletedRedirectFile() => File.Exists(Path.Combine(baseDir, "bin", $"{packageName}.cmd")).Should().BeFalse();
 
         [TestMethod]
-        public void DidNotCreateRuntimeConfigDevJsonFileWithCorrectConfig() =>
-            Directory.EnumerateFiles(baseDir, "*.runtimeconfig.dev.json", SearchOption.AllDirectories).Should().BeEmpty();
+        public void DeletedPackageDirectory() => Directory.Exists(Path.Combine(baseDir, "packages", packageName)).Should().BeFalse();
     }
 }

@@ -36,28 +36,24 @@ namespace DotNetCommands
             command = arguments["<command>"].ToString();
             var homeDir = Environment.GetEnvironmentVariable("HOME") ?? Environment.GetEnvironmentVariable("userprofile");
             var commandDirectory = new CommandDirectory(Path.Combine(homeDir, ".nuget", "commands"));
-            var installer = new Installer(commandDirectory);
             if (arguments["install"].IsTrue)
             {
+                var installer = new Installer(commandDirectory);
                 var force = arguments["--force"].IsTrue;
                 var success = installer.InstallAsync(command, force, pre).Result;
                 return success ? 0 : 1;
             }
             if (arguments["uninstall"].IsTrue)
-                Uninstall();
+            {
+                var uninstaller = new Uninstaller(commandDirectory);
+                var success = uninstaller.UninstallAsync(command).Result;
+                return success ? 0 : 1;
+            }
             if (arguments["update"].IsTrue)
-                Update();
+            {
+                WriteLine("Not implemented yet.");
+            }
             return 0;
-        }
-
-        public static void Uninstall()
-        {
-            WriteLine("Not implemented yet.");
-        }
-
-        public static void Update()
-        {
-            WriteLine("Not implemented yet.");
         }
     }
 }

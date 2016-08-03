@@ -23,8 +23,10 @@ namespace DotNetCommands
                 Directory.CreateDirectory(binDir);
         }
 
-        public string GetDirectoryForPackage(string packageName, string packageVersion) =>
-            Path.Combine(packagesDir, packageName, packageVersion);
+        public string GetDirectoryForPackage(string packageName, string packageVersion = null) =>
+            packageVersion == null
+            ? Path.Combine(packagesDir, packageName)
+            : Path.Combine(packagesDir, packageName, packageVersion);
 
         public string GetBinFile(string fileName) => Path.Combine(binDir, fileName);
 
