@@ -10,25 +10,27 @@ namespace IntegrationTests
     [TestClass]
     public class DownloadNugetTest
     {
-        private NugetDownloader downloader;
-        private CommandDirectoryCleanup commandDirectoryCleanup;
+        private static NugetDownloader downloader;
+        private static CommandDirectoryCleanup commandDirectoryCleanup;
 
-        [TestInitialize]
-        public void Initialize()
+        [ClassInitialize]
+#pragma warning disable CC0057 // Unused parameters
+        public static void ClassInitialize(TestContext tc)
+#pragma warning restore CC0057 // Unused parameters
         {
             commandDirectoryCleanup = new CommandDirectoryCleanup();
             downloader = new NugetDownloader(commandDirectoryCleanup.CommandDirectory);
         }
 
-        [TestCleanup]
-        public void Cleanup()
+        [ClassCleanup]
+        public static void ClassCleanup()
         {
             downloader.Dispose();
             commandDirectoryCleanup.Dispose();
         }
 
         [TestMethod]
-        public async Task DownloadDotNetFoo()
+        public async Task DownloadDotNetFooAsync()
         {
             var directory = await downloader.DownloadAndExtractNugetAsync("dotnet-foo", force: false, includePreRelease: false);
             Directory.Exists(directory).Should().BeTrue();

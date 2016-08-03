@@ -1,10 +1,7 @@
-using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using static DotNetCommands.Logger;
-using static System.Console;
 using System.IO;
 using System;
 using System.Diagnostics;
@@ -21,7 +18,7 @@ namespace DotNetCommands
 
         public async Task<bool> InstallAsync(string command, bool force, bool includePreRelease)
         {
-            WriteLineIfVerbose($"Installing {command}.");
+            WriteLineIfVerbose($"Installing {command}...");
             string destinationDir;
             using (var downloader = new NugetDownloader(commandDirectory))
             {

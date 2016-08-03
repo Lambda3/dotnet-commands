@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using DocoptNet;
-using static System.Console;
 using static DotNetCommands.Logger;
 
 namespace DotNetCommands

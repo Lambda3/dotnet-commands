@@ -1,5 +1,4 @@
 using System.IO;
-using System.Linq;
 
 namespace DotNetCommands
 {
@@ -10,7 +9,10 @@ namespace DotNetCommands
         private readonly string binDir;
         public CommandDirectory(string baseDir)
         {
-            BaseDir = baseDir;
+            if (string.IsNullOrWhiteSpace(baseDir)) throw new System.ArgumentException("You have to supply the base dir.", nameof(baseDir));
+            BaseDir = !baseDir.EndsWith(Path.DirectorySeparatorChar.ToString())
+                ? baseDir + Path.DirectorySeparatorChar
+                : baseDir;
             packagesDir = Path.Combine(baseDir, "packages");
             binDir = Path.Combine(baseDir, "bin");
             if (!Directory.Exists(baseDir))
@@ -20,6 +22,7 @@ namespace DotNetCommands
             if (!Directory.Exists(binDir))
                 Directory.CreateDirectory(binDir);
         }
+
         public string GetDirectoryForPackage(string packageName, string packageVersion) =>
             Path.Combine(packagesDir, packageName, packageVersion);
 
@@ -29,9 +32,7 @@ namespace DotNetCommands
         {
             if (!destination.StartsWith(BaseDir))
                 throw new System.ArgumentException(nameof(destination), $"Destination file '{destination}' should start with '{BaseDir}'.");
-            destination = destination.Substring(BaseDir.Length);
-            var numberOfDirs = destination.Count(c => c == System.IO.Path.DirectorySeparatorChar);
-            return $@"..\{destination}";
+            return ".." + Path.DirectorySeparatorChar + destination.Substring(BaseDir.Length);
         }
     }
 }

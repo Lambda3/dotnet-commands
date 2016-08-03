@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using static System.Console;
 using static DotNetCommands.Logger;
 using Newtonsoft.Json;
 using System.IO;
