@@ -5,30 +5,31 @@ namespace DotNetCommands
 {
     public class CommandDirectory
     {
-        private readonly string baseDir;
+        public string BaseDir { get; private set; }
         private readonly string packagesDir;
         private readonly string binDir;
         public CommandDirectory(string baseDir)
         {
-            this.baseDir = baseDir;
-            this.packagesDir = Path.Combine(baseDir, "packages");
-            this.binDir = Path.Combine(baseDir, "bin");
-            if (!Directory.Exists(this.baseDir))
-                Directory.CreateDirectory(this.baseDir);
-            if (!Directory.Exists(this.packagesDir))
-                Directory.CreateDirectory(this.packagesDir);
-            if (!Directory.Exists(this.binDir))
-                Directory.CreateDirectory(this.binDir);
+            BaseDir = baseDir;
+            packagesDir = Path.Combine(baseDir, "packages");
+            binDir = Path.Combine(baseDir, "bin");
+            if (!Directory.Exists(baseDir))
+                Directory.CreateDirectory(baseDir);
+            if (!Directory.Exists(packagesDir))
+                Directory.CreateDirectory(packagesDir);
+            if (!Directory.Exists(binDir))
+                Directory.CreateDirectory(binDir);
         }
         public string GetDirectoryForPackage(string packageName, string packageVersion) =>
             Path.Combine(packagesDir, packageName, packageVersion);
-        
+
         public string GetBinFile(string fileName) => Path.Combine(binDir, fileName);
+
         public string MakeRelativeToBaseDir(string destination)
         {
-            if (!destination.StartsWith(baseDir))
-                throw new System.ArgumentException(nameof(destination), $"Destination file '{destination}' should start with '{baseDir}'.");
-            destination = destination.Substring(baseDir.Length);
+            if (!destination.StartsWith(BaseDir))
+                throw new System.ArgumentException(nameof(destination), $"Destination file '{destination}' should start with '{BaseDir}'.");
+            destination = destination.Substring(BaseDir.Length);
             var numberOfDirs = destination.Count(c => c == System.IO.Path.DirectorySeparatorChar);
             return $@"..\{destination}";
         }

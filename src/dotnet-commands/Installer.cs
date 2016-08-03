@@ -18,63 +18,15 @@ namespace DotNetCommands
         {
             this.commandDirectory = commandDirectory;
         }
-        private const string feedUrl = "https://api.nuget.org/v3/index.json";
 
         public async Task<bool> InstallAsync(string command, bool force, bool includePreRelease)
         {
             WriteLineIfVerbose($"Installing {command}.");
             string destinationDir;
-            using (var client = new HttpClient())
+            using (var downloader = new NugetDownloader(commandDirectory))
             {
-                var feedResponse = await client.GetAsync(feedUrl);
-                if (!feedResponse.IsSuccessStatusCode)
-                {
-                    WriteLine($"Could not get feed details from '{feedUrl}'.");
-                    return false;
-                }
-                var feedContent = await feedResponse.Content.ReadAsStringAsync();
-                var resources = await Task.Factory.StartNew(() => JsonConvert.DeserializeObject<Feed>(feedContent));
-                var searchQueryServiceUrl = resources.Resources.First(r => r.Type == "SearchQueryService").Id;
-                var serviceUrl = $"{searchQueryServiceUrl}?q=packageid:{command}{(includePreRelease ? "&prerelease=true" : "")}";
-                var serviceResponse = await client.GetAsync(serviceUrl);
-                if (!serviceResponse.IsSuccessStatusCode)
-                {
-                    WriteLine($"Could not get service details from '{serviceUrl}'.");
-                    return false;
-                }
-                var serviceContent = await serviceResponse.Content.ReadAsStringAsync();
-                var service = await Task.Factory.StartNew(() => JsonConvert.DeserializeObject<Service>(serviceContent));
-                var version = service.Data.FirstOrDefault()?.Version;
-                if (version == null)
-                {
-                    WriteLine("Could not find a version.");
-                    return false;
-                }
-                WriteLineIfVerbose($"Found version {version}.");
-                destinationDir = commandDirectory.GetDirectoryForPackage(command, version);
-                if (Directory.Exists(destinationDir))
-                {
-                    WriteLineIfVerbose($"Directory '{destinationDir}' already exists.");
-                    if (force)
-                        Directory.Delete(destinationDir, true);
-                    else
-                        return true;
-                }
-                var packageBaseAddressUrl = resources.Resources.Last(r => r.Type.StartsWith("PackageBaseAddress")).Id;
-                var nupkgUrl = $"{packageBaseAddressUrl}{command.ToLower()}/{version.ToLower()}/{command.ToLower()}.{version.ToLower()}.nupkg";
-                WriteLineIfVerbose($"Nupkg url is '{nupkgUrl}'.");
-                var nupkgResponse = await client.GetAsync(nupkgUrl);
-                if (!nupkgResponse.IsSuccessStatusCode)
-                {
-                    WriteLine($"Could not get nupkg from '{nupkgUrl}'.");
-                    return false;
-                }
-                var tempFilePath = Path.GetTempFileName();
-                WriteLineIfVerbose($"Saving to '{tempFilePath}'.");
-                using (var tempFileStream = File.OpenWrite(tempFilePath))
-                    await nupkgResponse.Content.CopyToAsync(tempFileStream);
-                WriteLineIfVerbose($"Extracting to '{destinationDir}'.");
-                System.IO.Compression.ZipFile.ExtractToDirectory(tempFilePath, destinationDir);
+                destinationDir = await downloader.DownloadAndExtractNugetAsync(command, force, includePreRelease);
+                if (destinationDir == null) return false;
             }
             var created = await CreateBinFileAsync(destinationDir);
             if (!created) return false;
@@ -84,7 +36,8 @@ namespace DotNetCommands
             return restored;
         }
 
-        private bool CreateRuntimeConfigDevJsonFile(string destinationDir, string command)
+
+        private static bool CreateRuntimeConfigDevJsonFile(string destinationDir, string command)
         {
             var libDir = Path.Combine(destinationDir, "lib");
             if (!Directory.Exists(libDir)) return true;
@@ -107,7 +60,7 @@ namespace DotNetCommands
                 WriteLineIfVerbose($"Creating '{runtimeConfigDevJsonFile}'");
                 var packagesDir = Path.Combine(homeDir, ".nuget", "packages");
                 var escapedPackagesDir = JsonConvert.SerializeObject(packagesDir);
-                escapedPackagesDir = escapedPackagesDir.Substring(1, escapedPackagesDir.Length - 2 );
+                escapedPackagesDir = escapedPackagesDir.Substring(1, escapedPackagesDir.Length - 2);
                 File.WriteAllText(runtimeConfigDevJsonFullPath, @"{
   ""runtimeOptions"": {
     ""additionalProbingPaths"": [ """ + escapedPackagesDir + @""" ]
@@ -117,7 +70,7 @@ namespace DotNetCommands
             return true;
         }
 
-        private async Task<bool> RestoreAsync(string destinationDir)
+        private async static Task<bool> RestoreAsync(string destinationDir)
         {
             var libDir = Path.Combine(destinationDir, "lib");
             if (!Directory.Exists(libDir)) return true;
@@ -193,30 +146,5 @@ namespace DotNetCommands
             public string Main { get; set; }
         }
 
-        private class Feed
-        {
-            [JsonProperty("resources")]
-            public IList<Resource> Resources { get; set; }
-        }
-
-        private class Resource
-        {
-            [JsonProperty("@id")]
-            public string Id { get; set; }
-            [JsonProperty("@type")]
-            public string Type { get; set; }
-        }
-
-        private class Service
-        {
-            [JsonProperty("data")]
-            public IList<ServiceData> Data { get; set; }
-        }
-
-        private class ServiceData
-        {
-            [JsonProperty("version")]
-            public string Version { get; set; }
-        }
     }
 }
