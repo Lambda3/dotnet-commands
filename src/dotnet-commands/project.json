@@ -1,5 +1,5 @@
 {
-    "version": "0.0.1-alpha1-build9",
+    "version": "0.1.0-alpha1",
     "description": "A .NET CLI Commands library.",
     "dependencies": {
         "Microsoft.NETCore.App": {
