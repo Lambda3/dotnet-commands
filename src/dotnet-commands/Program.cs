@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using DocoptNet;
-using static DotNetCommands.Logger;
 
 namespace DotNetCommands
 {
@@ -12,13 +11,15 @@ namespace DotNetCommands
         private static string command;
         public static int Main(string[] args)
         {
-            const string usage = @"DotNet Commands
+            const string usage = @".NET Commands
+
   Usage:
     dotnet commands install <command> [--force] [--pre] [--verbose]
     dotnet commands uninstall <command> [ --verbose]
     dotnet commands update (<command> | all) [--pre] [--verbose]
     dotnet commands --help
     dotnet commands --version
+
   Options:
     --force                    Installs even if package was already installed. Optional.
     --pre                      Include pre-release versions. Optional.
@@ -31,7 +32,6 @@ namespace DotNetCommands
                 argsWithRun = new[] { "commands" }.Concat(args).ToArray();
             var arguments = new Docopt().Apply(usage, argsWithRun, version: Assembly.GetEntryAssembly().GetName().Version, exit: true);
             var verbose = arguments["--verbose"].IsTrue;
-            var pre = arguments["--pre"].IsTrue;
             Logger.IsVerbose = verbose;
             command = arguments["<command>"].ToString();
             var homeDir = Environment.GetEnvironmentVariable("HOME") ?? Environment.GetEnvironmentVariable("userprofile");
@@ -39,8 +39,7 @@ namespace DotNetCommands
             if (arguments["install"].IsTrue)
             {
                 var installer = new Installer(commandDirectory);
-                var force = arguments["--force"].IsTrue;
-                var success = installer.InstallAsync(command, force, pre).Result;
+                var success = installer.InstallAsync(command, arguments["--force"].IsTrue, arguments["--pre"].IsTrue).Result;
                 return success ? 0 : 1;
             }
             if (arguments["uninstall"].IsTrue)
@@ -51,7 +50,9 @@ namespace DotNetCommands
             }
             if (arguments["update"].IsTrue)
             {
-                WriteLine("Not implemented yet.");
+                var updater = new Updater(commandDirectory);
+                var success = updater.UpdateAsync(command, arguments["--force"].IsTrue, arguments["--pre"].IsTrue).Result;
+                return success ? 0 : 1;
             }
             return 0;
         }
