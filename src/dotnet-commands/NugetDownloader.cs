@@ -30,6 +30,14 @@ namespace DotNetCommands
             var settings = Settings.LoadDefaultSettings(Directory.GetCurrentDirectory(), configFileName: null, machineWideSettings: new MachineWideSettings());
             var sourceProvider = new PackageSourceProvider(settings);
             var sources = sourceProvider.LoadPackageSources().Where(s => s.ProtocolVersion == 3).ToList();
+            if (!sources.Any())
+            {
+                var source = new PackageSource("https://api.nuget.org/v3/index.json", "api.nuget.org", isEnabled: true, isOfficial: true, isPersistable: true)
+                {
+                    ProtocolVersion = 3
+                };
+                sources.Add(source);
+            }
             return sources;
         }
 
