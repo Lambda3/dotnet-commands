@@ -29,13 +29,15 @@ On Linux, TBD.
 Simply run `dotnet commands` to see the options, which are similar to this:
 
 ````
-DotNet Commands
+.NET Commands
+
   Usage:
     dotnet commands install <command> [--force] [--pre] [--verbose]
     dotnet commands uninstall <command> [ --verbose]
     dotnet commands update (<command> | all) [--pre] [--verbose]
     dotnet commands --help
     dotnet commands --version
+
   Options:
     --force                    Installs even if package was already installed. Optional.
     --pre                      Include pre-release versions. Optional.
@@ -44,7 +46,7 @@ DotNet Commands
     --version -v               Show version.
 ````
 
-You can try to install `dotnet-foo`, a library to try.
+You can try to install `dotnet-foo`, a harmless library to experiment with (the code is in this repo).
 
 ```powershell
 dotnet commands install dotnet-foo
@@ -58,14 +60,25 @@ dotnet foo
 
 ## Writing commands
 
-A more detailed explanation is comming. But the idea is simple, either create a Nuget which contains an executable (*.exe, *.ps1, or *.cmd)
-in the `tools` folder named `dotnet-yourtool`, or add a `commandMetadata.json` similar
-to [the one in this project](https://github.com/Lambda3/dotnet-commands/blob/master/src/dotnet-commands/commandMetadata.json) and add it to the
-`content` folder.
+It is very simple, either:
+
+* Create a Nuget which contains an executable (*.exe, *.ps1, or *.cmd) in the `tools` folder named `dotnet-yourtool`;
+* Or add a `commandMetadata.json` similar
+to [the one in this project](https://github.com/Lambda3/dotnet-commands/blob/master/src/dotnet-commands/commandMetadata.json)
+and add it to the `content` folder.
+
+If we find `project.json` files we will restore them. So, feel free to add any .NET Tool, and you don't need to add it's
+dependencies to your nupkg, they will be installed when your project is installed, just remember to add them to your `project.json` file.
+
+Non .NET tool work as well, just follow the rules above.
 
 ## Status
 
-We are still missing work on Linux and Mac, and only install works. PRs welcome.
+* We are still missing work on Linux and Mac;
+* We can't yet set the nuget source to a different feed;
+* We can't yet install a specific version.
+
+PRs welcome.
 
 ## Maintainers/Core team
 
