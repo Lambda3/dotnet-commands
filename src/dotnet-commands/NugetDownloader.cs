@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
 using static DotNetCommands.Logger;
 
@@ -35,10 +36,11 @@ namespace DotNetCommands
         private async Task<Feed> GetFeedAsync(PackageSource source)
         {
             var feedUrl = source.SourceUri.ToString();
+            PackageAndSourceInfo.UpdateAuthorizationForClient(client, source);
             var feedResponse = await client.GetAsync(feedUrl);
             if (!feedResponse.IsSuccessStatusCode)
             {
-                WriteLine($"Could not get feed details from '{feedUrl}'.");
+                WriteLine($"Could not get feed details from '{feedUrl}'. Got status code '{feedResponse.StatusCode.ToString()}' ({(int)feedResponse.StatusCode}).");
                 return null;
             }
             var feedContent = await feedResponse.Content.ReadAsStringAsync();
@@ -53,16 +55,18 @@ namespace DotNetCommands
                 WriteLine("No NuGet sources found.");
                 return null;
             }
-            return (await GetLatestVersionAndFeedAsync(packageName, includePreRelease)).Version.ToString();
+            return (await GetLatestVersionAndSourceInfoAsync(packageName, includePreRelease))?.Version.ToString();
         }
 
-        private async Task<VersionAndFeed> GetLatestVersionAndFeedAsync(string packageName, bool includePreRelease)
+        private async Task<PackageAndSourceInfo> GetLatestVersionAndSourceInfoAsync(string packageName, bool includePreRelease)
         {
             Feed feed = null;
+            PackageSource currentSource = null;
             var semanticVersion = default(SemanticVersion);
             foreach (var source in sources)
             {
                 var currentFeed = await GetFeedAsync(source);
+                if (currentFeed == null) return null;
                 var searchQueryServiceUrl = currentFeed.Resources.First(r => r.Type == "SearchQueryService").Id;
                 var serviceUrl = $"{searchQueryServiceUrl}?q=packageid:{packageName}{(includePreRelease ? "&prerelease=true" : "")}";
                 var serviceResponse = await client.GetAsync(serviceUrl);
@@ -84,9 +88,10 @@ namespace DotNetCommands
                 {
                     feed = currentFeed;
                     semanticVersion = currentSemanticVersion;
+                    currentSource = source;
                 }
             }
-            return new VersionAndFeed { Version = semanticVersion, Feed = feed };
+            return new PackageAndSourceInfo { Version = semanticVersion, Feed = feed, Source = currentSource, HttpClient = client };
         }
 
 
@@ -104,12 +109,13 @@ namespace DotNetCommands
                 WriteLine("No NuGet sources found.");
                 return null;
             }
-            var versionAndFeed = await GetLatestVersionAndFeedAsync(packageName, includePreRelease);
-            var packageBaseAddressUrl = versionAndFeed.Feed.Resources.Last(r => r.Type.StartsWith("PackageBaseAddress")).Id;
-            var version = versionAndFeed.Version.ToString();
+            var packageAndSourceInfo = await GetLatestVersionAndSourceInfoAsync(packageName, includePreRelease);
+            if (packageAndSourceInfo == null) return null;
+            var packageBaseAddressUrl = packageAndSourceInfo.Feed.Resources.Last(r => r.Type.StartsWith("PackageBaseAddress")).Id;
+            var version = packageAndSourceInfo.Version.ToString();
             var nupkgUrl = $"{packageBaseAddressUrl}{packageName.ToLower()}/{version.ToLower()}/{packageName.ToLower()}.{version.ToLower()}.nupkg";
             WriteLineIfVerbose($"Nupkg url is '{nupkgUrl}'.");
-            var nupkgResponse = await client.GetAsync(nupkgUrl);
+            var nupkgResponse = await packageAndSourceInfo.HttpClient.GetAsync(nupkgUrl);
             if (!nupkgResponse.IsSuccessStatusCode)
             {
                 WriteLine($"Could not get nupkg from '{nupkgUrl}'.");
@@ -161,10 +167,31 @@ namespace DotNetCommands
             public string Version { get; set; }
         }
 
-        private class VersionAndFeed
+        private class PackageAndSourceInfo
         {
+            private HttpClient client;
+
             public SemanticVersion Version { get; set; }
             public Feed Feed { get; set; }
+            public PackageSource Source { get; set; }
+            public HttpClient HttpClient
+            {
+                get
+                {
+                    UpdateAuthorizationForClient(client, Source);
+                    return client;
+                }
+                set
+                {
+                    client = value;
+                }
+            }
+            public static void UpdateAuthorizationForClient(HttpClient client, PackageSource source)
+            {
+                client.DefaultRequestHeaders.Authorization = source.Credentials != null
+                    ? new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes($"{source.Credentials.Username}:{source.Credentials.PasswordText}")))
+                    : null;
+            }
         }
     }
 
