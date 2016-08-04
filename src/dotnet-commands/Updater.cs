@@ -7,7 +7,7 @@ namespace DotNetCommands
 {
     public class Updater
     {
-        private CommandDirectory commandDirectory;
+        private readonly CommandDirectory commandDirectory;
 
         public Updater(CommandDirectory commandDirectory)
         {
@@ -29,7 +29,7 @@ namespace DotNetCommands
         {
             SemanticVersion largestAvailableVersion;
             using (var downloader = new NugetDownloader(commandDirectory))
-                largestAvailableVersion = SemanticVersion.Parse(await downloader.GetLatestVersion(packageName, includePreRelease));
+                largestAvailableVersion = SemanticVersion.Parse(await downloader.GetLatestVersionAsync(packageName, includePreRelease));
             var directory = commandDirectory.GetDirectoryForPackage(packageName);
             var packageDirs = Directory.EnumerateDirectories(directory);
             var packageVersions = packageDirs.Select(packageDir => SemanticVersion.Parse(Path.GetFileName(packageDir)));

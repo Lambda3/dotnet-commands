@@ -1,4 +1,7 @@
 ﻿using Newtonsoft.Json;
+using NuGet.Common;
+using NuGet.Configuration;
+using NuGet.Versioning;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,15 +16,25 @@ namespace DotNetCommands
     {
         private readonly CommandDirectory commandDirectory;
         private readonly HttpClient client = new HttpClient();
+        private readonly IList<PackageSource> sources;
+
         public NugetDownloader(CommandDirectory commandDirectory)
         {
             this.commandDirectory = commandDirectory;
+            sources = GetSources();
         }
 
-        private const string feedUrl = "https://api.nuget.org/v3/index.json";
-
-        private async Task<Feed> GetFeedAsync()
+        private static IList<PackageSource> GetSources()
         {
+            var settings = Settings.LoadDefaultSettings(Directory.GetCurrentDirectory(), configFileName: null, machineWideSettings: new MachineWideSettings());
+            var sourceProvider = new PackageSourceProvider(settings);
+            var sources = sourceProvider.LoadPackageSources().Where(s => s.ProtocolVersion == 3).ToList();
+            return sources;
+        }
+
+        private async Task<Feed> GetFeedAsync(PackageSource source)
+        {
+            var feedUrl = source.SourceUri.ToString();
             var feedResponse = await client.GetAsync(feedUrl);
             if (!feedResponse.IsSuccessStatusCode)
             {
@@ -33,29 +46,47 @@ namespace DotNetCommands
             return feed;
         }
 
-        public async Task<string> GetLatestVersion(string packageName, bool includePreRelease) =>
-            await GetLatestVersion(packageName, includePreRelease, await GetFeedAsync());
-
-        private async Task<string> GetLatestVersion(string packageName, bool includePreRelease, Feed resources)
+        public async Task<string> GetLatestVersionAsync(string packageName, bool includePreRelease)
         {
-            var searchQueryServiceUrl = resources.Resources.First(r => r.Type == "SearchQueryService").Id;
-            var serviceUrl = $"{searchQueryServiceUrl}?q=packageid:{packageName}{(includePreRelease ? "&prerelease=true" : "")}";
-            var serviceResponse = await client.GetAsync(serviceUrl);
-            if (!serviceResponse.IsSuccessStatusCode)
+            if (!sources.Any())
             {
-                WriteLine($"Could not get service details from '{serviceUrl}'.");
+                WriteLine("No NuGet sources found.");
                 return null;
             }
-            var serviceContent = await serviceResponse.Content.ReadAsStringAsync();
-            var service = await Task.Factory.StartNew(() => JsonConvert.DeserializeObject<Service>(serviceContent));
-            var version = service.Data.FirstOrDefault()?.Version;
-            if (version == null)
+            return (await GetLatestVersionAndFeedAsync(packageName, includePreRelease)).Version.ToString();
+        }
+
+        private async Task<VersionAndFeed> GetLatestVersionAndFeedAsync(string packageName, bool includePreRelease)
+        {
+            Feed feed = null;
+            var semanticVersion = default(SemanticVersion);
+            foreach (var source in sources)
             {
-                WriteLine("Could not find a version.");
-                return null;
+                var currentFeed = await GetFeedAsync(source);
+                var searchQueryServiceUrl = currentFeed.Resources.First(r => r.Type == "SearchQueryService").Id;
+                var serviceUrl = $"{searchQueryServiceUrl}?q=packageid:{packageName}{(includePreRelease ? "&prerelease=true" : "")}";
+                var serviceResponse = await client.GetAsync(serviceUrl);
+                if (!serviceResponse.IsSuccessStatusCode)
+                {
+                    WriteLine($"Could not get service details from '{serviceUrl}'.");
+                    return null;
+                }
+                var serviceContent = await serviceResponse.Content.ReadAsStringAsync();
+                var service = await Task.Factory.StartNew(() => JsonConvert.DeserializeObject<Service>(serviceContent));
+                var version = service.Data.FirstOrDefault()?.Version;
+                if (version == null)
+                {
+                    continue;
+                }
+                WriteLineIfVerbose($"Found version {version}.");
+                var currentSemanticVersion = SemanticVersion.Parse(version);
+                if (currentSemanticVersion > semanticVersion)
+                {
+                    feed = currentFeed;
+                    semanticVersion = currentSemanticVersion;
+                }
             }
-            WriteLineIfVerbose($"Found version {version}.");
-            return version;
+            return new VersionAndFeed { Version = semanticVersion, Feed = feed };
         }
 
 
@@ -68,18 +99,14 @@ namespace DotNetCommands
         /// <returns>The directory where it is extracted</returns>
         public async Task<string> DownloadAndExtractNugetAsync(string packageName, bool force, bool includePreRelease)
         {
-            var feed = await GetFeedAsync();
-            var version = await GetLatestVersion(packageName, includePreRelease, feed);
-            var destinationDir = commandDirectory.GetDirectoryForPackage(packageName, version);
-            if (Directory.Exists(destinationDir))
+            if (!sources.Any())
             {
-                WriteLineIfVerbose($"Directory '{destinationDir}' already exists.");
-                if (force)
-                    Directory.Delete(destinationDir, true);
-                else
-                    return destinationDir;
+                WriteLine("No NuGet sources found.");
+                return null;
             }
-            var packageBaseAddressUrl = feed.Resources.Last(r => r.Type.StartsWith("PackageBaseAddress")).Id;
+            var versionAndFeed = await GetLatestVersionAndFeedAsync(packageName, includePreRelease);
+            var packageBaseAddressUrl = versionAndFeed.Feed.Resources.Last(r => r.Type.StartsWith("PackageBaseAddress")).Id;
+            var version = versionAndFeed.Version.ToString();
             var nupkgUrl = $"{packageBaseAddressUrl}{packageName.ToLower()}/{version.ToLower()}/{packageName.ToLower()}.{version.ToLower()}.nupkg";
             WriteLineIfVerbose($"Nupkg url is '{nupkgUrl}'.");
             var nupkgResponse = await client.GetAsync(nupkgUrl);
@@ -92,6 +119,15 @@ namespace DotNetCommands
             WriteLineIfVerbose($"Saving to '{tempFilePath}'.");
             using (var tempFileStream = File.OpenWrite(tempFilePath))
                 await nupkgResponse.Content.CopyToAsync(tempFileStream);
+            var destinationDir = commandDirectory.GetDirectoryForPackage(packageName, version);
+            if (Directory.Exists(destinationDir))
+            {
+                WriteLineIfVerbose($"Directory '{destinationDir}' already exists.");
+                if (force)
+                    Directory.Delete(destinationDir, true);
+                else
+                    return destinationDir;
+            }
             WriteLineIfVerbose($"Extracting to '{destinationDir}'.");
             System.IO.Compression.ZipFile.ExtractToDirectory(tempFilePath, destinationDir);
             return destinationDir;
@@ -124,5 +160,23 @@ namespace DotNetCommands
             [JsonProperty("version")]
             public string Version { get; set; }
         }
+
+        private class VersionAndFeed
+        {
+            public SemanticVersion Version { get; set; }
+            public Feed Feed { get; set; }
+        }
+    }
+
+
+    public class MachineWideSettings : IMachineWideSettings
+    {
+        public MachineWideSettings()
+        {
+            var baseDirectory = NuGetEnvironment.GetFolderPath(NuGetFolderPath.MachineWideConfigDirectory);
+            Settings = NuGet.Configuration.Settings.LoadMachineWideSettings(baseDirectory);
+        }
+
+        public IEnumerable<Settings> Settings { get; private set; }
     }
 }
