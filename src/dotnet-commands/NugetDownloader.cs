@@ -1,11 +1,11 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using static DotNetCommands.Logger;
-using Newtonsoft.Json;
-using System.IO;
 
 namespace DotNetCommands
 {
@@ -20,14 +20,7 @@ namespace DotNetCommands
 
         private const string feedUrl = "https://api.nuget.org/v3/index.json";
 
-        /// <summary>
-        /// Downloads the specified nupkg and extracts it to a directory
-        /// </summary>
-        /// <param name="command">The command to download, i.e. "dotnet-foo".</param>
-        /// <param name="force">Force the download be made again if it was already downloaded earlier.</param>
-        /// <param name="includePreRelease">Allow pre-release versions.</param>
-        /// <returns>The directory where it is extracted</returns>
-        public async Task<string> DownloadAndExtractNugetAsync(string command, bool force, bool includePreRelease)
+        private async Task<Feed> GetFeedAsync()
         {
             var feedResponse = await client.GetAsync(feedUrl);
             if (!feedResponse.IsSuccessStatusCode)
@@ -36,9 +29,17 @@ namespace DotNetCommands
                 return null;
             }
             var feedContent = await feedResponse.Content.ReadAsStringAsync();
-            var resources = await Task.Factory.StartNew(() => JsonConvert.DeserializeObject<Feed>(feedContent));
+            var feed = await Task.Factory.StartNew(() => JsonConvert.DeserializeObject<Feed>(feedContent));
+            return feed;
+        }
+
+        public async Task<string> GetLatestVersion(string packageName, bool includePreRelease) =>
+            await GetLatestVersion(packageName, includePreRelease, await GetFeedAsync());
+
+        private async Task<string> GetLatestVersion(string packageName, bool includePreRelease, Feed resources)
+        {
             var searchQueryServiceUrl = resources.Resources.First(r => r.Type == "SearchQueryService").Id;
-            var serviceUrl = $"{searchQueryServiceUrl}?q=packageid:{command}{(includePreRelease ? "&prerelease=true" : "")}";
+            var serviceUrl = $"{searchQueryServiceUrl}?q=packageid:{packageName}{(includePreRelease ? "&prerelease=true" : "")}";
             var serviceResponse = await client.GetAsync(serviceUrl);
             if (!serviceResponse.IsSuccessStatusCode)
             {
@@ -54,7 +55,22 @@ namespace DotNetCommands
                 return null;
             }
             WriteLineIfVerbose($"Found version {version}.");
-            var destinationDir = commandDirectory.GetDirectoryForPackage(command, version);
+            return version;
+        }
+
+
+        /// <summary>
+        /// Downloads the specified nupkg and extracts it to a directory
+        /// </summary>
+        /// <param name="packageName">The command to download, i.e. "dotnet-foo".</param>
+        /// <param name="force">Force the download be made again if it was already downloaded earlier.</param>
+        /// <param name="includePreRelease">Allow pre-release versions.</param>
+        /// <returns>The directory where it is extracted</returns>
+        public async Task<string> DownloadAndExtractNugetAsync(string packageName, bool force, bool includePreRelease)
+        {
+            var feed = await GetFeedAsync();
+            var version = await GetLatestVersion(packageName, includePreRelease, feed);
+            var destinationDir = commandDirectory.GetDirectoryForPackage(packageName, version);
             if (Directory.Exists(destinationDir))
             {
                 WriteLineIfVerbose($"Directory '{destinationDir}' already exists.");
@@ -63,8 +79,8 @@ namespace DotNetCommands
                 else
                     return destinationDir;
             }
-            var packageBaseAddressUrl = resources.Resources.Last(r => r.Type.StartsWith("PackageBaseAddress")).Id;
-            var nupkgUrl = $"{packageBaseAddressUrl}{command.ToLower()}/{version.ToLower()}/{command.ToLower()}.{version.ToLower()}.nupkg";
+            var packageBaseAddressUrl = feed.Resources.Last(r => r.Type.StartsWith("PackageBaseAddress")).Id;
+            var nupkgUrl = $"{packageBaseAddressUrl}{packageName.ToLower()}/{version.ToLower()}/{packageName.ToLower()}.{version.ToLower()}.nupkg";
             WriteLineIfVerbose($"Nupkg url is '{nupkgUrl}'.");
             var nupkgResponse = await client.GetAsync(nupkgUrl);
             if (!nupkgResponse.IsSuccessStatusCode)

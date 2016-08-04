@@ -11,7 +11,6 @@ namespace IntegrationTests
     {
         private const string packageName = "dotnet-foo";
         private static CommandDirectoryCleanup commandDirectoryCleanup;
-        private static Installer installer;
         private static string baseDir;
         private static Uninstaller uninstaller;
         private static bool uninstalled;
@@ -23,7 +22,7 @@ namespace IntegrationTests
         {
             commandDirectoryCleanup = new CommandDirectoryCleanup();
             baseDir = commandDirectoryCleanup.CommandDirectory.BaseDir;
-            installer = new Installer(commandDirectoryCleanup.CommandDirectory);
+            var installer = new Installer(commandDirectoryCleanup.CommandDirectory);
             var installed = await installer.InstallAsync(packageName, force: false, includePreRelease: false);
             installed.Should().BeTrue();
             uninstaller = new Uninstaller(commandDirectoryCleanup.CommandDirectory);

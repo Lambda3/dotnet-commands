@@ -97,7 +97,7 @@ namespace DotNetCommands
             return true;
         }
 
-        private async Task<bool> CreateBinFileAsync(string packageDir)
+        private async Task<bool> CreateBinFileAsync(string packageDir) //need to do linux version
         {
             var packageInfo = new PackageInfo(packageDir);
             var mainFilePath = await packageInfo.GetMainFilePathAsync();
