@@ -75,7 +75,6 @@ Non .NET tool work as well, just follow the rules above.
 ## Status
 
 * We are still missing work on Linux and Mac;
-* We can't yet set the nuget source to a different feed;
 * We can't yet install a specific version.
 
 PRs welcome.
