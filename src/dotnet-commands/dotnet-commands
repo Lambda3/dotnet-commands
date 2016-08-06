@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+DIR=${PWD##*/}
+dotnet $DIR/dotnet-commands.dll "$@"

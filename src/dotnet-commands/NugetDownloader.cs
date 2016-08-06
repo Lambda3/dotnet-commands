@@ -144,6 +144,8 @@ namespace DotNetCommands
             }
             WriteLineIfVerbose($"Extracting to '{destinationDir}'.");
             System.IO.Compression.ZipFile.ExtractToDirectory(tempFilePath, destinationDir);
+            foreach (var fileToRename in Directory.EnumerateFiles(destinationDir, "*.removeext", SearchOption.AllDirectories))
+                File.Move(fileToRename, fileToRename.Substring(0, fileToRename.Length - ".removeext".Length));
             return destinationDir;
         }
 

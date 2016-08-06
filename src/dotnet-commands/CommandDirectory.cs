@@ -28,7 +28,8 @@ namespace DotNetCommands
             ? Path.Combine(packagesDir, packageName)
             : Path.Combine(packagesDir, packageName, packageVersion);
 
-        public string GetBinFile(string fileName) => Path.Combine(binDir, fileName);
+        public string GetBinFile(string fileName) =>
+            Path.Combine(binDir, fileName.Replace('/', Path.DirectorySeparatorChar));
 
         public string MakeRelativeToBaseDir(string destination)
         {

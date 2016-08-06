@@ -1,0 +1,24 @@
+{
+    "version": "1.0.1-*",
+    "description": "A sample package only to validate that the tools installer works.",
+    "dependencies": {
+    },
+    "authors": [ "giggio" ],
+    "packOptions": {
+        "owners": [
+            "giggio"
+        ],
+        "files": {
+            "mappings": {
+                "content/commandMetadata.json": "commandMetadata.json",
+                "tools/dotnet-bar-a.cmd": "dotnet-bar-a.cmd",
+                "tools/dotnet-bar-b.cmd": "dotnet-bar-b.cmd",
+                "tools/dotnet-bar-a.removeext": "dotnet-bar-a.removeext",
+                "tools/dotnet-bar-b.removeext": "dotnet-bar-b.removeext"
+            }
+        }
+    },
+    "frameworks": {
+        "netcoreapp1.0": {}
+    }
+}

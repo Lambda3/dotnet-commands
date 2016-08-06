@@ -26,6 +26,7 @@
             "mappings": {
                 "content/commandMetadata.json": "commandMetadata.json",
                 "lib/netcoreapp1.0/dotnet-commands.cmd": "dotnet-commands.cmd",
+                "lib/netcoreapp1.0/dotnet-commands": "dotnet-commands",
                 "lib/netcoreapp1.0/project.json": "project.json",
                 "lib/netcoreapp1.0/project.lock.json": "project.lock.json",
                 "lib/netcoreapp1.0/dotnet-commands.deps.json": "bin/**/netcoreapp1.0/dotnet-commands.deps.json"
@@ -34,7 +35,8 @@
     },
     "publishOptions": {
         "includeFiles": [
-            "dotnet-commands.cmd"
+            "dotnet-commands.cmd",
+            "dotnet-commands"
         ]
     },
     "buildOptions": {
@@ -42,7 +44,8 @@
         "emitEntryPoint": true,
         "copyToOutput": {
             "includeFiles": [
-                "dotnet-commands.cmd"
+                "dotnet-commands.cmd",
+                "dotnet-commands"
             ]
         }
     },

@@ -1,0 +1,6 @@
+﻿{
+    "commands": {
+        "dotnet-bar-aa": "tools/dotnet-bar-a.cmd",
+        "dotnet-bar-bb": "tools/dotnet-bar-b.cmd"
+    }
+}

@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using static DotNetCommands.Logger;
 
@@ -26,27 +28,29 @@ namespace DotNetCommands
             var packageDirs = Directory.EnumerateDirectories(commandDirectory.GetDirectoryForPackage(packageName));
             foreach (var packageDir in packageDirs)
             {
-                var packageInfo = new PackageInfo(packageDir);
-                var mainFilePath = await packageInfo.GetMainFilePathAsync();
-                if (mainFilePath == null) return false;
-                var binFile = commandDirectory.GetBinFile(Path.GetFileName(mainFilePath));
-                try
+                var packageInfo = await PackageInfo.GetMainFilePathAsync(packageName, packageDir);
+                if (packageInfo == null || !packageInfo.Commands.Any()) return false;
+                foreach (var command in packageInfo.Commands)
                 {
-                    if (File.Exists(binFile))
+                    var binFile = commandDirectory.GetBinFile(command.Name + (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ".cmd" : ""));
+                    try
                     {
-                        WriteLineIfVerbose($"Deleting bin file '{binFile}'.");
-                        File.Delete(binFile);
+                        if (File.Exists(binFile))
+                        {
+                            WriteLineIfVerbose($"Deleting bin file '{binFile}'.");
+                            File.Delete(binFile);
+                        }
+                        else
+                        {
+                            WriteLineIfVerbose($"Bin file '{binFile}' does not exist.");
+                        }
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        WriteLineIfVerbose($"Bin file '{binFile}' does not exist.");
+                        WriteLine($"Could not delete bin file '{binFile}'.");
+                        WriteLineIfVerbose(ex.ToString());
+                        return false;
                     }
-                }
-                catch (Exception ex)
-                {
-                    WriteLine($"Could not delete bin file '{binFile}'.");
-                    WriteLineIfVerbose(ex.ToString());
-                    return false;
                 }
             }
             return true;

@@ -18,7 +18,7 @@ namespace IntegrationTests
 
         [ClassInitialize]
 #pragma warning disable CC0057 // Unused parameters
-        public static async Task ClassInitialize(TestContext tc)
+        public static async Task ClassInitializeAsync(TestContext tc)
 #pragma warning restore CC0057 // Unused parameters
         {
             commandDirectoryCleanup = new CommandDirectoryCleanup();

@@ -4,6 +4,8 @@ using static DotNetCommands.Logger;
 using System.IO;
 using System;
 using System.Diagnostics;
+using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace DotNetCommands
 {
@@ -15,18 +17,18 @@ namespace DotNetCommands
             this.commandDirectory = commandDirectory;
         }
 
-        public async Task<bool> InstallAsync(string command, bool force, bool includePreRelease)
+        public async Task<bool> InstallAsync(string packageName, bool force, bool includePreRelease)
         {
-            WriteLineIfVerbose($"Installing {command}...");
+            WriteLineIfVerbose($"Installing {packageName}...");
             string packageDir;
             using (var downloader = new NugetDownloader(commandDirectory))
             {
-                packageDir = await downloader.DownloadAndExtractNugetAsync(command, force, includePreRelease);
+                packageDir = await downloader.DownloadAndExtractNugetAsync(packageName, force, includePreRelease);
                 if (packageDir == null) return false;
             }
-            var created = await CreateBinFileAsync(packageDir);
+            var created = await CreateBinFileAsync(packageName, packageDir);
             if (!created) return false;
-            var added = CreateRuntimeConfigDevJsonFile(packageDir, command);
+            var added = CreateRuntimeConfigDevJsonFile(packageDir, packageName);
             if (!added) return false;
             var restored = await RestoreAsync(packageDir);
             return restored;
@@ -97,15 +99,19 @@ namespace DotNetCommands
             return true;
         }
 
-        private async Task<bool> CreateBinFileAsync(string packageDir) //need to do linux version
+        private async Task<bool> CreateBinFileAsync(string packageName, string packageDir)
         {
-            var packageInfo = new PackageInfo(packageDir);
-            var mainFilePath = await packageInfo.GetMainFilePathAsync();
-            if (mainFilePath == null) return false;
-            var binFile = commandDirectory.GetBinFile(Path.GetFileName(mainFilePath));
-            var relativeMainFileName = commandDirectory.MakeRelativeToBaseDir(mainFilePath);
-            File.WriteAllText(binFile, $@"@""%~dp0\{relativeMainFileName}"" %*");
-            WriteLineIfVerbose($"Wrote redirect file '{binFile}' pointing to '{relativeMainFileName}'.");
+            var packageInfo = await PackageInfo.GetMainFilePathAsync(packageName, packageDir);
+            if (packageInfo == null || !packageInfo.Commands.Any()) return false;
+            foreach (var command in packageInfo.Commands)
+            {
+                var binFile = commandDirectory.GetBinFile(command.Name + (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ".cmd" : ""));
+                var relativeMainFileName = commandDirectory.MakeRelativeToBaseDir(command.ExecutableFilePath);
+                File.WriteAllText(binFile, RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                                    ? $@"@""%~dp0\{relativeMainFileName}"" %*"
+                                    : $"#!/usr/bin/env bash\ndotnet ${{PWD##*/}}/{relativeMainFileName}");
+                WriteLineIfVerbose($"Wrote redirect file '{binFile}' pointing to '{relativeMainFileName}'.");
+            }
             return true;
         }
     }
