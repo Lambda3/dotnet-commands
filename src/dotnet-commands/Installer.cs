@@ -109,7 +109,7 @@ namespace DotNetCommands
                 var relativeMainFileName = commandDirectory.MakeRelativeToBaseDir(command.ExecutableFilePath);
                 File.WriteAllText(binFile, RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
                                     ? $@"@""%~dp0\{relativeMainFileName}"" %*"
-                                    : $"#!/usr/bin/env bash\ndotnet ${{PWD##*/}}/{relativeMainFileName}");
+                                    : $"#!/usr/bin/env bash{Environment.NewLine}. \"$( cd \"$( dirname \"${{BASH_SOURCE[0]}}\" )\" && pwd )/{relativeMainFileName}\" \"$@\"");
                 WriteLineIfVerbose($"Wrote redirect file '{binFile}' pointing to '{relativeMainFileName}'.");
             }
             return true;
