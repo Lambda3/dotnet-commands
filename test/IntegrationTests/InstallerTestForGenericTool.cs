@@ -2,6 +2,7 @@
 using FluentAssertions;
 using NUnit.Framework;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace IntegrationTests
@@ -31,10 +32,23 @@ namespace IntegrationTests
         }
 
         [Test]
-        public void InstalledSuccessfully() => installed.Should().BeTrue();
+        public void InstalledSuccessfully()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                installed.Should().BeTrue();
+            else
+                installed.Should().BeFalse();
+        }
 
         [Test]
-        public void WroteRedirectFile() => File.Exists(Path.Combine(baseDir, "bin", $"{packageName}.cmd")).Should().BeTrue();
+        public void WroteRedirectFile()
+        {
+            var wroteRedirectFile = File.Exists(Path.Combine(baseDir, "bin", $"{packageName}.cmd"));
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                wroteRedirectFile.Should().BeTrue();
+            else
+                wroteRedirectFile.Should().BeFalse();
+        }
 
         [Test]
         public void DidNotCreateRuntimeConfigDevJsonFileWithCorrectConfig() =>
