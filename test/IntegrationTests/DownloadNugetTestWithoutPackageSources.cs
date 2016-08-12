@@ -1,6 +1,6 @@
 ﻿using DotNetCommands;
 using FluentAssertions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 using System;
 using System.IO;
 using System.Linq;
@@ -8,17 +8,15 @@ using System.Threading.Tasks;
 
 namespace IntegrationTests
 {
-    [TestClass]
+    [TestFixture]
     public class DownloadNugetTestWithoutPackageSources
     {
-        private static NugetDownloader downloader;
-        private static CommandDirectoryCleanup commandDirectoryCleanup;
-        private static string tempPath;
+        private NugetDownloader downloader;
+        private CommandDirectoryCleanup commandDirectoryCleanup;
+        private string tempPath;
 
-        [ClassInitialize]
-#pragma warning disable CC0057 // Unused parameters
-        public static void ClassInitialize(TestContext tc)
-#pragma warning restore CC0057 // Unused parameters
+        [OneTimeSetUp]
+        public void ClassInitialize()
         {
             tempPath = Path.Combine(Path.GetTempPath(), "DotNetTempPath" + Guid.NewGuid().ToString().Replace("-", "").Substring(0, 10));
             Directory.CreateDirectory(tempPath);
@@ -27,8 +25,8 @@ namespace IntegrationTests
             downloader = new NugetDownloader(commandDirectoryCleanup.CommandDirectory);
         }
 
-        [ClassCleanup]
-        public static void ClassCleanup()
+        [OneTimeTearDown]
+        public void ClassCleanup()
         {
             downloader.Dispose();
             commandDirectoryCleanup.Dispose();
@@ -41,7 +39,7 @@ namespace IntegrationTests
 #pragma warning restore CC0004 // Catch block cannot be empty
         }
 
-        [TestMethod]
+        [Test]
         public async Task DownloadDotNetFooWithoutPackageSourcesAsync()
         {
             var directory = await downloader.DownloadAndExtractNugetAsync("dotnet-foo", force: false, includePreRelease: false);

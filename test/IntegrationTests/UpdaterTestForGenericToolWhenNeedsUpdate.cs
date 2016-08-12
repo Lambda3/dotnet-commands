@@ -1,6 +1,6 @@
 ﻿using DotNetCommands;
 using FluentAssertions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 using System.IO;
 using System.Threading.Tasks;
 using System;
@@ -9,19 +9,17 @@ using NuGet.Versioning;
 
 namespace IntegrationTests
 {
-    [TestClass]
+    [TestFixture]
     public class UpdaterTestForGenericToolWhenNeedsUpdate
     {
         private const string packageName = "dotnet-foo";
-        private static CommandDirectoryCleanup commandDirectoryCleanup;
-        private static bool updated;
-        private static string baseDir;
-        private static string version;
+        private CommandDirectoryCleanup commandDirectoryCleanup;
+        private bool updated;
+        private string baseDir;
+        private string version;
 
-        [ClassInitialize]
-#pragma warning disable CC0057 // Unused parameters
-        public static async Task ClassInitialize(TestContext tc)
-#pragma warning restore CC0057 // Unused parameters
+        [OneTimeSetUp]
+        public async Task ClassInitialize()
         {
             commandDirectoryCleanup = new CommandDirectoryCleanup();
             baseDir = commandDirectoryCleanup.CommandDirectory.BaseDir;
@@ -33,7 +31,7 @@ namespace IntegrationTests
             updated = await updater.UpdateAsync(packageName, force: false, includePreRelease: false);
         }
 
-        private static void MoveToPreviousVersion()
+        private void MoveToPreviousVersion()
         {
             var directory = commandDirectoryCleanup.CommandDirectory.GetDirectoryForPackage(packageName);
             var packageDir = Directory.EnumerateDirectories(directory).First();
@@ -47,23 +45,23 @@ namespace IntegrationTests
             File.WriteAllText(binFile, File.ReadAllText(binFile).Replace(version, smallerVersion));
         }
 
-        [ClassCleanup]
-        public static void ClassCleanup()
+        [OneTimeTearDown]
+        public void ClassCleanup()
         {
             commandDirectoryCleanup.Dispose();
         }
 
-        [TestMethod]
+        [Test]
         public void UpdatedSuccessfully() => updated.Should().BeTrue();
 
-        [TestMethod]
+        [Test]
         public void UpdatedRedirectFile() => File.ReadAllText(Path.Combine(baseDir, "bin", $"{packageName}.cmd")).Should().Contain(version);
 
-        [TestMethod]
+        [Test]
         public void DidNotCreateRuntimeConfigDevJsonFileWithCorrectConfig() =>
             Directory.EnumerateFiles(baseDir, "*.runtimeconfig.dev.json", SearchOption.AllDirectories).Should().BeEmpty();
 
-        [TestMethod]
+        [Test]
         public void UpdatedVersion()
         {
             var directory = commandDirectoryCleanup.CommandDirectory.GetDirectoryForPackage(packageName);

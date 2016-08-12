@@ -1,6 +1,6 @@
 ﻿using DotNetCommands;
 using FluentAssertions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 using System.IO;
 using System.Threading.Tasks;
 using System;
@@ -9,20 +9,18 @@ using NuGet.Versioning;
 
 namespace IntegrationTests
 {
-    [TestClass]
+    [TestFixture]
     public class UpdaterTestForGenericToolWhenDoesNotNeedUpdateBecauseGreater
     {
         private const string packageName = "dotnet-foo";
-        private static CommandDirectoryCleanup commandDirectoryCleanup;
-        private static bool updated;
-        private static string baseDir;
-        private static DateTime lastWriteTimeForBinFile;
-        private static DateTime lastWriteTimeForPackageDir;
+        private CommandDirectoryCleanup commandDirectoryCleanup;
+        private bool updated;
+        private string baseDir;
+        private DateTime lastWriteTimeForBinFile;
+        private DateTime lastWriteTimeForPackageDir;
 
-        [ClassInitialize]
-#pragma warning disable CC0057 // Unused parameters
-        public static async Task ClassInitializeAsync(TestContext tc)
-#pragma warning restore CC0057 // Unused parameters
+        [OneTimeSetUp]
+        public async Task ClassInitializeAsync()
         {
             commandDirectoryCleanup = new CommandDirectoryCleanup();
             baseDir = commandDirectoryCleanup.CommandDirectory.BaseDir;
@@ -35,7 +33,7 @@ namespace IntegrationTests
             updated = await updater.UpdateAsync(packageName, force: false, includePreRelease: false);
         }
 
-        private static void MoveToLaterVersion()
+        private void MoveToLaterVersion()
         {
             var directory = commandDirectoryCleanup.CommandDirectory.GetDirectoryForPackage(packageName);
             var packageDir = Directory.EnumerateDirectories(directory).First();
@@ -48,7 +46,7 @@ namespace IntegrationTests
             File.WriteAllText(binFile, File.ReadAllText(binFile).Replace(version, greaterVersion));
         }
 
-        private static void GetLastWriteTimes()
+        private void GetLastWriteTimes()
         {
             lastWriteTimeForBinFile = new FileInfo(Path.Combine(baseDir, "bin", $"{packageName}.cmd")).LastWriteTime;
             var directory = commandDirectoryCleanup.CommandDirectory.GetDirectoryForPackage(packageName);
@@ -56,19 +54,19 @@ namespace IntegrationTests
             lastWriteTimeForPackageDir = new DirectoryInfo(packageDir).LastWriteTime;
         }
 
-        [ClassCleanup]
-        public static void ClassCleanup()
+        [OneTimeTearDown]
+        public void ClassCleanup()
         {
             commandDirectoryCleanup.Dispose();
         }
 
-        [TestMethod]
+        [Test]
         public void UpdatedSuccessfully() => updated.Should().BeTrue();
 
-        [TestMethod]
+        [Test]
         public void DidNotUpdateRedirectFile() => new FileInfo(Path.Combine(baseDir, "bin", $"{packageName}.cmd")).LastWriteTime.Should().Be(lastWriteTimeForBinFile);
 
-        [TestMethod]
+        [Test]
         public void DidNotUpdatePackageDir()
         {
             var directory = commandDirectoryCleanup.CommandDirectory.GetDirectoryForPackage(packageName);

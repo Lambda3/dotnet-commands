@@ -1,24 +1,22 @@
 ﻿using DotNetCommands;
 using FluentAssertions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 using System.IO;
 using System.Threading.Tasks;
 
 namespace IntegrationTests
 {
-    [TestClass]
+    [TestFixture]
     public class UninstallerTestForGenericTool
     {
         private const string packageName = "dotnet-foo";
-        private static CommandDirectoryCleanup commandDirectoryCleanup;
-        private static string baseDir;
-        private static Uninstaller uninstaller;
-        private static bool uninstalled;
+        private CommandDirectoryCleanup commandDirectoryCleanup;
+        private string baseDir;
+        private Uninstaller uninstaller;
+        private bool uninstalled;
 
-        [ClassInitialize]
-#pragma warning disable CC0057 // Unused parameters
-        public static async Task ClassInitialize(TestContext tc)
-#pragma warning restore CC0057 // Unused parameters
+        [OneTimeSetUp]
+        public async Task ClassInitialize()
         {
             commandDirectoryCleanup = new CommandDirectoryCleanup();
             baseDir = commandDirectoryCleanup.CommandDirectory.BaseDir;
@@ -29,19 +27,19 @@ namespace IntegrationTests
             uninstalled = await uninstaller.UninstallAsync(packageName);
         }
 
-        [ClassCleanup]
-        public static void ClassCleanup()
+        [OneTimeTearDown]
+        public void ClassCleanup()
         {
             commandDirectoryCleanup.Dispose();
         }
 
-        [TestMethod]
+        [Test]
         public void UninstalledSuccessfully() => uninstalled.Should().BeTrue();
 
-        [TestMethod]
+        [Test]
         public void DeletedRedirectFile() => File.Exists(Path.Combine(baseDir, "bin", $"{packageName}.cmd")).Should().BeFalse();
 
-        [TestMethod]
+        [Test]
         public void DeletedPackageDirectory() => Directory.Exists(Path.Combine(baseDir, "packages", packageName)).Should().BeFalse();
     }
 }

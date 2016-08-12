@@ -1,35 +1,33 @@
 ﻿using DotNetCommands;
 using FluentAssertions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace IntegrationTests
 {
-    [TestClass]
+    [TestFixture]
     public class DownloadNugetTest
     {
-        private static NugetDownloader downloader;
-        private static CommandDirectoryCleanup commandDirectoryCleanup;
+        private NugetDownloader downloader;
+        private CommandDirectoryCleanup commandDirectoryCleanup;
 
-        [ClassInitialize]
-#pragma warning disable CC0057 // Unused parameters
-        public static void ClassInitialize(TestContext tc)
-#pragma warning restore CC0057 // Unused parameters
+        [OneTimeSetUp]
+        public void ClassInitialize()
         {
             commandDirectoryCleanup = new CommandDirectoryCleanup();
             downloader = new NugetDownloader(commandDirectoryCleanup.CommandDirectory);
         }
 
-        [ClassCleanup]
-        public static void ClassCleanup()
+        [OneTimeTearDown]
+        public void ClassCleanup()
         {
             downloader.Dispose();
             commandDirectoryCleanup.Dispose();
         }
 
-        [TestMethod]
+        [Test]
         public async Task DownloadDotNetFooAsync()
         {
             var directory = await downloader.DownloadAndExtractNugetAsync("dotnet-foo", force: false, includePreRelease: false);

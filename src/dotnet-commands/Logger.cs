@@ -13,13 +13,11 @@ namespace DotNetCommands
             Logger.logger = logger;
         }
 
-#pragma warning disable CC0031
         public static void WriteLineIfVerbose(string msg)
         {
             if (IsVerbose)
                 logger(msg);
         }
         public static void WriteLine(string msg) => logger(msg);
-#pragma warning restore CC0031
     }
 }

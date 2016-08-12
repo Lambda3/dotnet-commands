@@ -1,25 +1,23 @@
 ﻿using DotNetCommands;
 using FluentAssertions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace IntegrationTests
 {
-    [TestClass]
+    [TestFixture]
     public class InstallerTestForDotNetTool
     {
         private const string packageName = "dotnet-commands";
-        private static CommandDirectoryCleanup commandDirectoryCleanup;
-        private static Installer installer;
-        private static bool installed;
-        private static string baseDir;
+        private CommandDirectoryCleanup commandDirectoryCleanup;
+        private Installer installer;
+        private bool installed;
+        private string baseDir;
 
-        [ClassInitialize]
-#pragma warning disable CC0057 // Unused parameters
-        public static async Task ClassInitializeAsync(TestContext tc)
-#pragma warning restore CC0057 // Unused parameters
+        [OneTimeSetUp]
+        public async Task ClassInitializeAsync()
         {
             commandDirectoryCleanup = new CommandDirectoryCleanup();
             baseDir = commandDirectoryCleanup.CommandDirectory.BaseDir;
@@ -27,19 +25,19 @@ namespace IntegrationTests
             installed = await installer.InstallAsync(packageName, force: false, includePreRelease: true);
         }
 
-        [ClassCleanup]
-        public static void ClassCleanup()
+        [OneTimeTearDown]
+        public void ClassCleanup()
         {
             commandDirectoryCleanup.Dispose();
         }
 
-        [TestMethod]
+        [Test]
         public void InstalledSuccessfully() => installed.Should().BeTrue();
 
-        [TestMethod]
+        [Test]
         public void WroteRedirectFile() => File.Exists(Path.Combine(baseDir, "bin", $"{packageName}.cmd")).Should().BeTrue();
 
-        [TestMethod]
+        [Test]
         public void CreatedRuntimeConfigDevJsonFileWithCorrectConfig()
         {
             var runtimeConfigFile = Directory.EnumerateFiles(Path.Combine(baseDir, "packages", packageName), $"{packageName}.runtimeconfig.dev.json", SearchOption.AllDirectories).SingleOrDefault();

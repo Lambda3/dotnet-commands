@@ -1,24 +1,22 @@
 ﻿using DotNetCommands;
 using FluentAssertions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 using System.IO;
 using System.Threading.Tasks;
 
 namespace IntegrationTests
 {
-    [TestClass]
+    [TestFixture]
     public class InstallerTestForGenericTool
     {
         private const string packageName = "dotnet-foo";
-        private static CommandDirectoryCleanup commandDirectoryCleanup;
-        private static Installer installer;
-        private static bool installed;
-        private static string baseDir;
+        private CommandDirectoryCleanup commandDirectoryCleanup;
+        private Installer installer;
+        private bool installed;
+        private string baseDir;
 
-        [ClassInitialize]
-#pragma warning disable CC0057 // Unused parameters
-        public static async Task ClassInitialize(TestContext tc)
-#pragma warning restore CC0057 // Unused parameters
+        [OneTimeSetUp]
+        public async Task ClassInitialize()
         {
             commandDirectoryCleanup = new CommandDirectoryCleanup();
             baseDir = commandDirectoryCleanup.CommandDirectory.BaseDir;
@@ -26,19 +24,19 @@ namespace IntegrationTests
             installed = await installer.InstallAsync(packageName, force: false, includePreRelease: false);
         }
 
-        [ClassCleanup]
-        public static void ClassCleanup()
+        [OneTimeTearDown]
+        public void ClassCleanup()
         {
             commandDirectoryCleanup.Dispose();
         }
 
-        [TestMethod]
+        [Test]
         public void InstalledSuccessfully() => installed.Should().BeTrue();
 
-        [TestMethod]
+        [Test]
         public void WroteRedirectFile() => File.Exists(Path.Combine(baseDir, "bin", $"{packageName}.cmd")).Should().BeTrue();
 
-        [TestMethod]
+        [Test]
         public void DidNotCreateRuntimeConfigDevJsonFileWithCorrectConfig() =>
             Directory.EnumerateFiles(baseDir, "*.runtimeconfig.dev.json", SearchOption.AllDirectories).Should().BeEmpty();
     }
