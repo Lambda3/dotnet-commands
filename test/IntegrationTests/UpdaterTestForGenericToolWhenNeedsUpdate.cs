@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System;
 using System.Linq;
 using NuGet.Versioning;
+using System.Runtime.InteropServices;
 
 namespace IntegrationTests
 {
@@ -21,6 +22,7 @@ namespace IntegrationTests
         [OneTimeSetUp]
         public async Task ClassInitialize()
         {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
             commandDirectoryCleanup = new CommandDirectoryCleanup();
             baseDir = commandDirectoryCleanup.CommandDirectory.BaseDir;
             var installer = new Installer(commandDirectoryCleanup.CommandDirectory);
@@ -46,24 +48,33 @@ namespace IntegrationTests
         }
 
         [OneTimeTearDown]
-        public void ClassCleanup()
+        public void ClassCleanup() => commandDirectoryCleanup?.Dispose();
+
+        [Test]
+        public void UpdatedSuccessfully()
         {
-            commandDirectoryCleanup.Dispose();
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
+            updated.Should().BeTrue();
         }
 
         [Test]
-        public void UpdatedSuccessfully() => updated.Should().BeTrue();
+        public void UpdatedRedirectFile()
+        {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
+            File.ReadAllText(Path.Combine(baseDir, "bin", $"{packageName}.cmd")).Should().Contain(version);
+        }
 
         [Test]
-        public void UpdatedRedirectFile() => File.ReadAllText(Path.Combine(baseDir, "bin", $"{packageName}.cmd")).Should().Contain(version);
-
-        [Test]
-        public void DidNotCreateRuntimeConfigDevJsonFileWithCorrectConfig() =>
+        public void DidNotCreateRuntimeConfigDevJsonFileWithCorrectConfig()
+        {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
             Directory.EnumerateFiles(baseDir, "*.runtimeconfig.dev.json", SearchOption.AllDirectories).Should().BeEmpty();
+        }
 
         [Test]
         public void UpdatedVersion()
         {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
             var directory = commandDirectoryCleanup.CommandDirectory.GetDirectoryForPackage(packageName);
             var packageDirectory = Directory.EnumerateDirectories(directory).Single();
             Path.GetFileName(packageDirectory).Should().Be(version);

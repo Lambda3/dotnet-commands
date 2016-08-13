@@ -3,6 +3,7 @@ using FluentAssertions;
 using NUnit.Framework;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace IntegrationTests
@@ -35,7 +36,7 @@ namespace IntegrationTests
         public void InstalledSuccessfully() => installed.Should().BeTrue();
 
         [Test]
-        public void WroteRedirectFile() => File.Exists(Path.Combine(baseDir, "bin", $"{packageName}.cmd")).Should().BeTrue();
+        public void WroteRedirectFile() => File.Exists(Path.Combine(baseDir, "bin", $"{packageName}{(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ".cmd" :"")}")).Should().BeTrue();
 
         [Test]
         public void CreatedRuntimeConfigDevJsonFileWithCorrectConfig()

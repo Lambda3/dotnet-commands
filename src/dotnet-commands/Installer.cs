@@ -27,7 +27,18 @@ namespace DotNetCommands
                 if (packageDir == null) return false;
             }
             var created = await CreateBinFileAsync(packageName, packageDir);
-            if (!created) return false;
+            if (!created)
+            {
+                if (Directory.Exists(packageDir))
+                {
+                    WriteLineIfVerbose($"Deleting {packageDir}...");
+                    Directory.Delete(packageDir, true);
+                    var packageDirectoryForAllVersions = commandDirectory.GetDirectoryForPackage(packageName);
+                    if (Directory.EnumerateDirectories(packageDirectoryForAllVersions).Count() <= 1)
+                        Directory.Delete(packageDirectoryForAllVersions, true);
+                }
+                return false;
+            }
             var added = CreateRuntimeConfigDevJsonFile(packageDir, packageName);
             if (!added) return false;
             var restored = await RestoreAsync(packageDir);

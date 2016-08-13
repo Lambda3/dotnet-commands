@@ -1,6 +1,6 @@
 ﻿using NUnit.Framework;
 using System;
-
+[assembly: LevelOfParallelism(1)]
 namespace IntegrationTests
 {
     [SetUpFixture]

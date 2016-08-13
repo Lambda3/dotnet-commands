@@ -2,6 +2,7 @@
 using FluentAssertions;
 using NUnit.Framework;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace IntegrationTests
@@ -18,6 +19,7 @@ namespace IntegrationTests
         [OneTimeSetUp]
         public async Task ClassInitialize()
         {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
             commandDirectoryCleanup = new CommandDirectoryCleanup();
             baseDir = commandDirectoryCleanup.CommandDirectory.BaseDir;
             var installer = new Installer(commandDirectoryCleanup.CommandDirectory);
@@ -28,18 +30,27 @@ namespace IntegrationTests
         }
 
         [OneTimeTearDown]
-        public void ClassCleanup()
+        public void ClassCleanup() => commandDirectoryCleanup?.Dispose();
+
+        [Test]
+        public void UninstalledSuccessfully()
         {
-            commandDirectoryCleanup.Dispose();
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
+            uninstalled.Should().BeTrue();
         }
 
         [Test]
-        public void UninstalledSuccessfully() => uninstalled.Should().BeTrue();
+        public void DeletedRedirectFile()
+        {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
+            File.Exists(Path.Combine(baseDir, "bin", $"{packageName}.cmd")).Should().BeFalse();
+        }
 
         [Test]
-        public void DeletedRedirectFile() => File.Exists(Path.Combine(baseDir, "bin", $"{packageName}.cmd")).Should().BeFalse();
-
-        [Test]
-        public void DeletedPackageDirectory() => Directory.Exists(Path.Combine(baseDir, "packages", packageName)).Should().BeFalse();
+        public void DeletedPackageDirectory()
+        {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
+            Directory.Exists(Path.Combine(baseDir, "packages", packageName)).Should().BeFalse();
+        }
     }
 }

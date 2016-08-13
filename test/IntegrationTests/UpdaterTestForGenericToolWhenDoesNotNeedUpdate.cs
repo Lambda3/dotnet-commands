@@ -5,6 +5,7 @@ using System.IO;
 using System.Threading.Tasks;
 using System;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace IntegrationTests
 {
@@ -21,6 +22,7 @@ namespace IntegrationTests
         [OneTimeSetUp]
         public async Task ClassInitialize()
         {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
             commandDirectoryCleanup = new CommandDirectoryCleanup();
             baseDir = commandDirectoryCleanup.CommandDirectory.BaseDir;
             var installer = new Installer(commandDirectoryCleanup.CommandDirectory);
@@ -40,20 +42,26 @@ namespace IntegrationTests
         }
 
         [OneTimeTearDown]
-        public void ClassCleanup()
+        public void ClassCleanup() => commandDirectoryCleanup?.Dispose();
+
+        [Test]
+        public void UpdatedSuccessfully()
         {
-            commandDirectoryCleanup.Dispose();
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
+            updated.Should().BeTrue();
         }
 
         [Test]
-        public void UpdatedSuccessfully() => updated.Should().BeTrue();
-
-        [Test]
-        public void DidNotUpdateRedirectFile() => new FileInfo(Path.Combine(baseDir, "bin", $"{packageName}.cmd")).LastWriteTime.Should().Be(lastWriteTimeForBinFile);
+        public void DidNotUpdateRedirectFile()
+        {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
+            new FileInfo(Path.Combine(baseDir, "bin", $"{packageName}.cmd")).LastWriteTime.Should().Be(lastWriteTimeForBinFile);
+        }
 
         [Test]
         public void DidNotUpdatePackageDir()
         {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
             var directory = commandDirectoryCleanup.CommandDirectory.GetDirectoryForPackage(packageName);
             var packageDir = Directory.EnumerateDirectories(directory).First();
             new DirectoryInfo(packageDir).LastWriteTime.Should().Be(lastWriteTimeForPackageDir);

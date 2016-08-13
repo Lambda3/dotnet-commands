@@ -14,10 +14,12 @@ namespace IntegrationTests
         private NugetDownloader downloader;
         private CommandDirectoryCleanup commandDirectoryCleanup;
         private string tempPath;
+        private string currentDirectoryWhenTestStarted;
 
         [OneTimeSetUp]
         public void ClassInitialize()
         {
+            currentDirectoryWhenTestStarted = Directory.GetCurrentDirectory();
             tempPath = Path.Combine(Path.GetTempPath(), "DotNetTempPath" + Guid.NewGuid().ToString().Replace("-", "").Substring(0, 10));
             Directory.CreateDirectory(tempPath);
             Directory.SetCurrentDirectory(tempPath);
@@ -28,6 +30,7 @@ namespace IntegrationTests
         [OneTimeTearDown]
         public void ClassCleanup()
         {
+            Directory.SetCurrentDirectory(currentDirectoryWhenTestStarted);
             downloader.Dispose();
             commandDirectoryCleanup.Dispose();
             try
