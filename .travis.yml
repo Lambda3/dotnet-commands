@@ -4,4 +4,4 @@ services:
 before_install:
 - docker pull lambda3/dotnet-commands
 script:
-- docker run -ti --rm -v "$(pwd):/app" lambda3/dotnet-commands /bin/bash -c 'cd /app/test/IntegrationTests && dotnet restore && dotnet test'
+- docker run -ti --rm -v "$(pwd):/app" lambda3/dotnet-commands /bin/bash -c 'cd /app && dotnet restore && cd /app/test/IntegrationTests && dotnet test'
