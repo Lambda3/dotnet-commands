@@ -1,0 +1,19 @@
+version: 1.0.{build}
+
+clone_folder: c:\projects\dotnet-commands
+
+shallow_clone: true
+
+clone_depth: 1
+
+build_script:
+  - ps: >-
+      cd c:\projects\src\dotnet-commands
+      dotnet build
+      cd c:\projects\test\IntegrationTests
+      dotnet build
+
+test_script:
+  - ps: >-
+      cd c:\projects\test\IntegrationTests
+      dotnet test
