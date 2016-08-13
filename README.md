@@ -2,6 +2,8 @@
 
 A tool that allows you to use .NET Core apps as .NET CLI Commands.
 
+[![Windows Build status](https://img.shields.io/appveyor/ci/Lambda3/dotnet-commands/master.svg?label=windows%20build)](https://ci.appveyor.com/project/lambda3/dotnet-commands)
+[![Linux Build status](https://img.shields.io/travis/Lambda3/dotnet-commands/master.svg?label=linux%20build)](https://travis-ci.org/Lambda3/dotnet-commands)
 [![Nuget count](https://img.shields.io/nuget/v/dotnet-commands.svg)](https://www.nuget.org/packages/dotnet-commands/)
 [![License](https://img.shields.io/badge/licence-Apache%20License%202.0-blue.svg)](https://github.com/Lambda3/dotnet-commands/blob/master/LICENSE.txt)
 [![Issues open](https://img.shields.io/github/issues-raw/Lambda3/dotnet-commands.svg)](https://huboard.com/Lambda3/dotnet-commands/)
