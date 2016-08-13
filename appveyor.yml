@@ -8,12 +8,18 @@ clone_depth: 1
 
 build_script:
   - ps: >-
+
       cd c:\projects\src\dotnet-commands
+
       dotnet build
+
       cd c:\projects\test\IntegrationTests
+
       dotnet build
 
 test_script:
   - ps: >-
+
       cd c:\projects\test\IntegrationTests
+
       dotnet test
