@@ -71,7 +71,7 @@ dotnet foo
 `dotnet-foo` will only work on Windows.
 
 You can also try `dotnet-bar` (code [here](https://github.com/Lambda3/dotnet-commands/tree/master/src/dotnet-bar)),
-which exposes `bar-a` and `bar-b` commands, and will work on Linux, Mac and Windows.
+which exposes `dotnet bar-aa` and `dotnet bar-bb` commands, and will work on Linux, Mac and Windows.
 
 ## Writing commands
 
