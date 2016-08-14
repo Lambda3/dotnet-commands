@@ -1,6 +1,6 @@
 # .NET Commands
 
-A tool that allows you to use .NET Core apps as .NET CLI Commands.
+A tool that allows you to use any executable as a .NET CLI Command, with special treatment for .NET Core apps.
 
 [![Windows Build status](https://img.shields.io/appveyor/ci/Lambda3/dotnet-commands/master.svg?label=windows%20build)](https://ci.appveyor.com/project/lambda3/dotnet-commands)
 [![Linux Build status](https://img.shields.io/travis/Lambda3/dotnet-commands/master.svg?label=linux%20build)](https://travis-ci.org/Lambda3/dotnet-commands)
@@ -8,11 +8,15 @@ A tool that allows you to use .NET Core apps as .NET CLI Commands.
 [![License](https://img.shields.io/badge/licence-Apache%20License%202.0-blue.svg)](https://github.com/Lambda3/dotnet-commands/blob/master/LICENSE.txt)
 [![Issues open](https://img.shields.io/github/issues-raw/Lambda3/dotnet-commands.svg)](https://huboard.com/Lambda3/dotnet-commands/)
 
+Any tool can be a .NET CLI tool, it just has to be in the path, and be named `dotnet-*.` What .NET Commands
+does is get the tool from nuget and wire it to the path. It is simple and easy to create tools, and simple
+and easy to install, update and uninstall tools.
+
 This is a community project, free and open source. Everyone is invited to contribute, fork, share and use the code.
 
 ## Installing
 
-On Windows, run:
+Use your favorite shell.
 
 ### Powershell
 ````powershell
@@ -28,7 +32,6 @@ On Windows, run:
 ````bash
 \curl -sSL https://raw.githubusercontent.com/Lambda3/dotnet-commands/master/src/dotnet-commands/install.sh | bash
 ````
-
 
 ## Running
 
@@ -52,7 +55,8 @@ Simply run `dotnet commands` to see the options, which are similar to this:
     --version -v               Show version.
 ````
 
-You can try to install `dotnet-foo`, a harmless library to experiment with (the code is in this repo).
+You can try to install `dotnet-foo`, a harmless library to experiment with (the code
+is in this repo [here](https://github.com/Lambda3/dotnet-commands/tree/master/src/dotnet-foo)).
 
 ```powershell
 dotnet commands install dotnet-foo
@@ -63,6 +67,11 @@ And you can then use `dotnet-foo` like this:
 ```powershell
 dotnet foo
 ```
+
+`dotnet-foo` will only work on Windows.
+
+You can also try `dotnet-bar` (code [here](https://github.com/Lambda3/dotnet-commands/tree/master/src/dotnet-bar)),
+which exposes `bar-a` and `bar-b` commands, and will work on Linux, Mac and Windows.
 
 ## Writing commands
 
@@ -80,7 +89,6 @@ Non .NET tool work as well, just follow the rules above.
 
 ## Status
 
-* We are still missing work on Linux and Mac;
 * We can't yet install a specific version.
 
 PRs welcome.
