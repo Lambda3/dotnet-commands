@@ -1,5 +1,5 @@
 {
-    "version": "0.1.0",
+    "version": "0.1.1-alpha1",
     "description": "A .NET CLI Commands library.",
     "dependencies": {
         "Microsoft.NETCore.App": {
@@ -15,9 +15,7 @@
     },
     "authors": [ "giggio" ],
     "packOptions": {
-        "owners": [
-            "giggio"
-        ],
+        "owners": [ "giggio" ],
         "repository": {
             "type": "git",
             "url": "https://github.com/Lambda3/dotnet-commands"
@@ -56,5 +54,8 @@
                 "portable-net45+win8"
             ]
         }
+    },
+    "scripts": {
+        "postpublish": [ "powershell -noprofile \"& .\\ZipPublish.ps1\"" ]
     }
 }

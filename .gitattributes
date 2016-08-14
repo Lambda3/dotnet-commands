@@ -63,3 +63,5 @@
 #*.RTF   diff=astextplain
 
 *.removeext text eol=lf
+*.sh text eol=lf
+dotnet-commands text eol=lf
