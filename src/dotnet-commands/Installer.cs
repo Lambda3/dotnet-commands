@@ -39,20 +39,21 @@ namespace DotNetCommands
                 }
                 return false;
             }
-            var added = CreateRuntimeConfigDevJsonFile(packageDir, packageName);
+            var added = CreateRuntimeConfigDevJsonFile(packageDir);
             if (!added) return false;
             var restored = await RestoreAsync(packageDir);
             return restored;
         }
 
 
-        private static bool CreateRuntimeConfigDevJsonFile(string packageDir, string command)
+        private static bool CreateRuntimeConfigDevJsonFile(string packageDir)
         {
             var libDir = Path.Combine(packageDir, "lib");
             if (!Directory.Exists(libDir)) return true;
-            var comandDlls = Directory.EnumerateFiles(libDir, $"{command}.dll", SearchOption.AllDirectories);
-            foreach (var commandDll in comandDlls)
+            var commandDlls = Directory.EnumerateFiles(libDir, "*.dll", SearchOption.AllDirectories);
+            foreach (var commandDll in commandDlls)
             {
+                var command = Path.GetFileNameWithoutExtension(commandDll);
                 var runtimeConfigDevJsonFile = $"{command}.runtimeconfig.dev.json";
                 var runtimeConfigDevJsonFullPath = Path.Combine(Path.GetDirectoryName(commandDll), runtimeConfigDevJsonFile);
                 if (File.Exists(runtimeConfigDevJsonFullPath))
@@ -60,6 +61,10 @@ namespace DotNetCommands
                     WriteLineIfVerbose($"File '{runtimeConfigDevJsonFullPath}' already exists, not creating.");
                     return true;
                 }
+                var runtimeConfigJsonFile = $"{command}.runtimeconfig.json";
+                var runtimeConfigJsonFullPath = Path.Combine(Path.GetDirectoryName(commandDll), runtimeConfigJsonFile);
+                if (!File.Exists(runtimeConfigJsonFullPath))
+                    continue;
                 var homeDir = Environment.GetEnvironmentVariable("HOME") ?? Environment.GetEnvironmentVariable("userprofile");
                 if (string.IsNullOrWhiteSpace(homeDir))
                 {
