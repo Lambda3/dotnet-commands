@@ -17,7 +17,7 @@ namespace IntegrationTests
         private string baseDir;
 
         [OneTimeSetUp]
-        public async Task ClassInitialize()
+        public async Task ClassInitializeAsync()
         {
             commandDirectoryCleanup = new CommandDirectoryCleanup();
             baseDir = commandDirectoryCleanup.CommandDirectory.BaseDir;

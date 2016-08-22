@@ -110,6 +110,43 @@ namespace DotNetCommands
         }
 
 
+        private async Task<HttpResponseMessage> GetNupkgAsync(string serviceUrl)
+        {
+            var originalUri = new Uri(serviceUrl);
+            var url = serviceUrl;
+            var redirects = 0;
+            using (var localClient = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }))
+            {
+                while (true)
+                {
+                    if (redirects > 20)
+                    {
+                        WriteLineIfVerbose($"Exceeded maximum number of redirects.");
+                        return null;
+                    }
+                    localClient.DefaultRequestHeaders.Authorization = originalUri.Host == new Uri(url).Host
+                        ? client.DefaultRequestHeaders.Authorization
+                        : null;
+                    WriteLineIfVerbose($"Downloading nupkg from '{url}'...");
+                    var serviceResponse = await localClient.GetAsync(url);
+                    if (serviceResponse.StatusCode == System.Net.HttpStatusCode.Redirect
+                        || serviceResponse.StatusCode == System.Net.HttpStatusCode.MovedPermanently
+                        || serviceResponse.StatusCode == System.Net.HttpStatusCode.RedirectMethod)
+                    {
+                        url = serviceResponse.Headers.Location.ToString();
+                        WriteLineIfVerbose($"Redirected to '{url}'.");
+                        redirects++;
+                    }
+                    else
+                    {
+                        if (!serviceResponse.IsSuccessStatusCode)
+                            WriteLineIfVerbose($"Got response code {(int)serviceResponse.StatusCode} ({serviceResponse.StatusCode}) when accessing '{url}'...");
+                        return serviceResponse;
+                    }
+                }
+            }
+        }
+
         /// <summary>
         /// Downloads the specified nupkg and extracts it to a directory
         /// </summary>
@@ -130,7 +167,12 @@ namespace DotNetCommands
             var version = packageAndSourceInfo.Version.ToString();
             var nupkgUrl = $"{packageBaseAddressUrl}{packageName.ToLower()}/{version.ToLower()}/{packageName.ToLower()}.{version.ToLower()}.nupkg";
             WriteLineIfVerbose($"Nupkg url is '{nupkgUrl}'.");
-            var nupkgResponse = await packageAndSourceInfo.HttpClient.GetAsync(nupkgUrl);
+            var nupkgResponse = await GetNupkgAsync(nupkgUrl);
+            if (nupkgResponse == null)
+            {
+                WriteLineIfVerbose($"Could not get a valid response for the nupkg download.");
+                return null;
+            }
             if (!nupkgResponse.IsSuccessStatusCode)
             {
                 WriteLine($"Could not get nupkg from '{nupkgUrl}'.");
