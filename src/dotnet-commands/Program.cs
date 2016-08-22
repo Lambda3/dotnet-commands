@@ -30,7 +30,8 @@ namespace DotNetCommands
             var argsWithRun = args;
             if (args.Any() && args[0] != "commands")
                 argsWithRun = new[] { "commands" }.Concat(args).ToArray();
-            var arguments = new Docopt().Apply(usage, argsWithRun, version: Assembly.GetEntryAssembly().GetName().Version, exit: true);
+            var version = typeof(Program).GetTypeInfo().Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
+            var arguments = new Docopt().Apply(usage, argsWithRun, version: version, exit: true);
             var verbose = arguments["--verbose"].IsTrue;
             Logger.IsVerbose = verbose;
             command = arguments["<command>"].ToString();
