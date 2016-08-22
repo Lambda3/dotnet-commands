@@ -99,6 +99,13 @@ namespace DotNetCommands
                     currentSource = source;
                 }
             }
+            if (semanticVersion == null)
+            {
+                WriteLine($"Package '{packageName}' not found. Sources used:");
+                foreach (var source in sources)
+                    WriteLine($" - {source.Name}: {source.Source}");
+                return null;
+            }
             return new PackageAndSourceInfo { Version = semanticVersion, Feed = feed, Source = currentSource, HttpClient = client };
         }
 
