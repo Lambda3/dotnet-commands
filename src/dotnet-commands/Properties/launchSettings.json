@@ -1,8 +1,9 @@
 {
   "profiles": {
     "dotnet-commands": {
-      "commandName": "Project",
-      "commandLineArgs": "install dotnet-foo"
+        "commandName": "Project",
+        "commandLineArgs": "list",
+        "workingDirectory": "C:\\p\\sdk\\components"
     }
   }
 }
