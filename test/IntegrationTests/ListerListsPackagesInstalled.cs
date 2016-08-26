@@ -47,7 +47,7 @@ namespace IntegrationTests
 @"dotnet-bar (1.0.2)
   dotnet-bar-aa
   dotnet-bar-bb
-dotnet-foo (1.0.0)
+dotnet-foo (1.0.1)
 "
             ), Times.Once);
 #pragma warning restore CC0031 // Check for null before calling a delegate

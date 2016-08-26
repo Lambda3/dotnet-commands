@@ -1,5 +1,5 @@
 {
-    "version": "1.0.0-*",
+    "version": "1.0.1-*",
     "description": "A sample package only to validate that the tools installer works.",
     "dependencies": {
         "Microsoft.NETCore": "5.0.2"
@@ -11,7 +11,8 @@
         ],
         "files": {
             "mappings": {
-                "tools/dotnet-foo.cmd": "dotnet-foo.cmd"
+                "tools/dotnet-foo.cmd": "dotnet-foo.cmd",
+                "tools/dotnet-foo.removeext": "dotnet-foo.removeext"
             }
         }
     },
