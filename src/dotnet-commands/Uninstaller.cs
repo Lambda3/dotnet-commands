@@ -25,10 +25,16 @@ namespace DotNetCommands
 
         private async Task<bool> DeleteRedirectFileAsync(string packageName)
         {
-            var packageDirs = Directory.EnumerateDirectories(commandDirectory.GetDirectoryForPackage(packageName));
-            foreach (var packageDir in packageDirs)
+            var packageDir = commandDirectory.GetDirectoryForPackage(packageName);
+            if (!Directory.Exists(packageDir))
             {
-                var packageInfo = await PackageInfo.GetMainFilePathAsync(packageName, packageDir);
+                WriteLine($"Package {packageName} is not installed.");
+                return false;
+            }
+            var packageDirs = Directory.EnumerateDirectories(packageDir);
+            foreach (var packageAndVersionDir in packageDirs)
+            {
+                var packageInfo = await PackageInfo.GetMainFilePathAsync(packageName, packageAndVersionDir);
                 if (packageInfo == null || !packageInfo.Commands.Any()) return false;
                 foreach (var command in packageInfo.Commands)
                 {
