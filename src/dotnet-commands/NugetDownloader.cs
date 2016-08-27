@@ -57,18 +57,18 @@ namespace DotNetCommands
             NugetVersion currentNugetVersion = null;
             foreach (var sourceInfo in sourceInfos)
             {
-                SemanticVersion latestVersion;
+                NugetVersion latestNugetVersion;
                 try
                 {
-                    latestVersion = await sourceInfo.GetLatestVersionAsync(packageName, includePreRelease);
+                    latestNugetVersion = await sourceInfo.GetLatestVersionAsync(packageName, includePreRelease);
                 }
                 catch (Exception)
                 {
                     return null;
                 }
-                if (latestVersion == null) continue;
-                if (currentNugetVersion == null || latestVersion > currentNugetVersion.Version)
-                    currentNugetVersion = new NugetVersion(latestVersion, sourceInfo);
+                if (latestNugetVersion == null) continue;
+                if (currentNugetVersion == null || latestNugetVersion.Version > currentNugetVersion.Version)
+                    currentNugetVersion = latestNugetVersion;
             }
             if (currentNugetVersion == null)
             {
@@ -95,7 +95,7 @@ namespace DotNetCommands
                 return null;
             }
             var nugetVersion = await GetLatestVersionAndSourceInfoAsync(packageName, includePreRelease);
-            var nupkgResponse = await nugetVersion.GetNupkgAsync(packageName);
+            var nupkgResponse = await nugetVersion.GetNupkgAsync(nugetVersion.PackageName);
             if (nupkgResponse == null)
             {
                 WriteLineIfVerbose($"Could not get a valid response for the nupkg download.");
@@ -107,7 +107,7 @@ namespace DotNetCommands
             WriteLineIfVerbose($"Saving to '{tempFilePath}'.");
             using (var tempFileStream = File.OpenWrite(tempFilePath))
                 await nupkgResponse.Content.CopyToAsync(tempFileStream);
-            var destinationDir = commandDirectory.GetDirectoryForPackage(packageName, nugetVersion.Version.ToString());
+            var destinationDir = commandDirectory.GetDirectoryForPackage(nugetVersion.PackageName, nugetVersion.Version.ToString());
             if (Directory.Exists(destinationDir))
             {
                 WriteLineIfVerbose($"Directory '{destinationDir}' already exists.");
@@ -151,6 +151,8 @@ namespace DotNetCommands
 
         private class ServiceData
         {
+            [JsonProperty("id")]
+            public string Id { get; set; }
             [JsonProperty("version")]
             public string Version { get; set; }
         }
@@ -181,7 +183,7 @@ namespace DotNetCommands
                 return feed;
             }
 
-            public async Task<SemanticVersion> GetLatestVersionAsync(string packageName, bool includePreRelease)
+            public async Task<NugetVersion> GetLatestVersionAsync(string packageName, bool includePreRelease)
             {
                 var currentFeed = await GetFeedAsync();
                 if (currentFeed == null) return null;
@@ -195,14 +197,14 @@ namespace DotNetCommands
                 }
                 var serviceContent = await serviceResponse.Content.ReadAsStringAsync();
                 var service = await Task.Factory.StartNew(() => JsonConvert.DeserializeObject<Service>(serviceContent));
-                var version = service.Data.FirstOrDefault()?.Version;
+                var serviceData = service.Data.FirstOrDefault();
+                var version = serviceData?.Version;
                 if (version == null)
-                {
                     return null;
-                }
                 WriteLineIfVerbose($"Found version {version}.");
                 var currentSemanticVersion = SemanticVersion.Parse(version);
-                return currentSemanticVersion;
+                var nugetVersion = new NugetVersion(currentSemanticVersion, this, serviceData.Id);
+                return nugetVersion;
             }
 
             public PackageSource Source { get; set; }
@@ -261,16 +263,18 @@ namespace DotNetCommands
 
         private class NugetVersion
         {
-            public NugetVersion(SemanticVersion version, SourceInfo info)
+            public NugetVersion(SemanticVersion version, SourceInfo info, string packageName)
             {
                 Version = version;
                 SourceInfo = info;
+                PackageName = packageName;
             }
 
             public Task<HttpResponseMessage> GetNupkgAsync(string packageName) => SourceInfo.GetNupkgAsync(Version, packageName);
 
             public SemanticVersion Version { get; }
             public SourceInfo SourceInfo { get; }
+            public string PackageName { get; }
         }
     }
 
