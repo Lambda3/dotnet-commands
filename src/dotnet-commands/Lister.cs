@@ -21,14 +21,14 @@ namespace DotNetCommands
             var sb = new StringBuilder();
             try
             {
-                var packageDirectories = Directory.EnumerateDirectories(commandDirectory.PackagesDir);
+                var packageDirectories = Directory.EnumerateDirectories(commandDirectory.PackagesDir).OrderBy(d => d);
                 foreach (var pkgDir in packageDirectories)
                 {
                     var packageDirectory = pkgDir;
                     if (!packageDirectory.EndsWith(Path.DirectorySeparatorChar.ToString()))
                         packageDirectory += Path.DirectorySeparatorChar.ToString();
                     var packageName = Path.GetFileName(Path.GetDirectoryName(packageDirectory));
-                    var versionDirectories = Directory.EnumerateDirectories(packageDirectory);
+                    var versionDirectories = Directory.EnumerateDirectories(packageDirectory).OrderBy(d => d);
                     foreach (var verDir in versionDirectories)
                     {
                         var versionDirectory = verDir;
@@ -38,7 +38,7 @@ namespace DotNetCommands
                         sb.AppendLine($"{packageName} ({packageVersion})");
                     }
 
-                    var packageDirs = Directory.EnumerateDirectories(commandDirectory.GetDirectoryForPackage(packageName));
+                    var packageDirs = Directory.EnumerateDirectories(commandDirectory.GetDirectoryForPackage(packageName)).OrderBy(d => d);
                     foreach (var packageDir in packageDirs)
                     {
                         var packageInfo = await PackageInfo.GetMainFilePathAsync(packageName, packageDir);
