@@ -35,7 +35,7 @@ namespace DotNetCommands
             foreach (var packageAndVersionDir in packageDirs)
             {
                 var packageInfo = await PackageInfo.GetMainFilePathAsync(packageName, packageAndVersionDir);
-                if (packageInfo == null || !packageInfo.Commands.Any()) return false;
+                if (packageInfo == null || !packageInfo.Commands.Any()) return true;
                 foreach (var command in packageInfo.Commands)
                 {
                     var binFile = commandDirectory.GetBinFile(command.Name + (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ".cmd" : ""));

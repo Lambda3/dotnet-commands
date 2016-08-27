@@ -1,9 +1,8 @@
 {
   "profiles": {
     "dotnet-commands": {
-        "commandName": "Project",
-        "commandLineArgs": "list",
-        "workingDirectory": "C:\\p\\sdk\\components"
+      "commandName": "Project",
+      "commandLineArgs": "list"
     }
   }
 }
