@@ -20,28 +20,28 @@ namespace DotNetCommands
         public async Task<bool> InstallAsync(string packageName, bool force, bool includePreRelease)
         {
             WriteLineIfVerbose($"Installing {packageName}...");
-            string packageDir;
+            PackageInfo packageInfo;
             using (var downloader = new NugetDownloader(commandDirectory))
             {
-                packageDir = await downloader.DownloadAndExtractNugetAsync(packageName, force, includePreRelease);
-                if (packageDir == null) return false;
+                packageInfo = await downloader.DownloadAndExtractNugetAsync(packageName, force, includePreRelease);
+                if (packageInfo == null) return false;
             }
-            var created = await CreateBinFileAsync(packageName, packageDir);
+            var created = CreateBinFile(packageInfo);
             if (!created)
             {
-                if (Directory.Exists(packageDir))
+                if (Directory.Exists(packageInfo.PackageDir))
                 {
-                    WriteLineIfVerbose($"Deleting {packageDir}...");
-                    Directory.Delete(packageDir, true);
+                    WriteLineIfVerbose($"Deleting {packageInfo}...");
+                    Directory.Delete(packageInfo.PackageDir, true);
                     var packageDirectoryForAllVersions = commandDirectory.GetDirectoryForPackage(packageName);
                     if (Directory.EnumerateDirectories(packageDirectoryForAllVersions).Count() <= 1)
                         Directory.Delete(packageDirectoryForAllVersions, true);
                 }
                 return false;
             }
-            var added = CreateRuntimeConfigDevJsonFile(packageDir);
+            var added = CreateRuntimeConfigDevJsonFile(packageInfo.PackageDir);
             if (!added) return false;
-            var restored = await RestoreAsync(packageDir);
+            var restored = await RestoreAsync(packageInfo.PackageDir);
             return restored;
         }
 
@@ -115,9 +115,8 @@ namespace DotNetCommands
             return true;
         }
 
-        private async Task<bool> CreateBinFileAsync(string packageName, string packageDir)
+        private bool CreateBinFile(PackageInfo packageInfo)
         {
-            var packageInfo = await PackageInfo.GetMainFilePathAsync(packageName, packageDir);
             if (packageInfo == null || !packageInfo.Commands.Any()) return false;
             foreach (var command in packageInfo.Commands)
             {

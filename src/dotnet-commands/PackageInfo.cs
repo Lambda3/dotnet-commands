@@ -116,6 +116,7 @@ namespace DotNetCommands
             else
             {//here the command author did not specify a command metadata file, so we check directly the tools dir
                 var toolsDir = Path.Combine(packageDir, "tools");
+                WriteLineIfVerbose($"Tools dir is '{toolsDir}'.");
                 if (!Directory.Exists(toolsDir))
                 {
                     WriteLine("This package does not have a tools directory.");
@@ -126,7 +127,12 @@ namespace DotNetCommands
                     ? Directory.EnumerateFiles(toolsDir, "*.exe")
                         .Union(Directory.EnumerateFiles(toolsDir, "*.cmd"))
                         .Union(Directory.EnumerateFiles(toolsDir, "*.ps1")).ToList()
-                    : Directory.EnumerateFiles(toolsDir, "*.").ToList();
+                    : Directory.EnumerateFiles(toolsDir).Where(fileName => string.IsNullOrEmpty(Path.GetExtension(fileName))).ToList();
+                if (IsVerbose)
+                {
+                    foreach (var file in files)
+                        WriteLine($"Found tool file '{file}'.");
+                }
                 switch (files.Count)
                 {
                     case 0:// if we can't find any file, we have a problem

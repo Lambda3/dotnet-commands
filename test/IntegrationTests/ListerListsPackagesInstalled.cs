@@ -44,11 +44,7 @@ namespace IntegrationTests
         {
 #pragma warning disable CC0031 // Check for null before calling a delegate
             logger.Verify(l => l(
-@"dotnet-bar (1.0.2)
-  dotnet-bar-aa
-  dotnet-bar-bb
-dotnet-foo (1.0.1)
-"
+$"dotnet-bar (1.0.2){Environment.NewLine}  dotnet-bar-aa{Environment.NewLine}  dotnet-bar-bb{Environment.NewLine}dotnet-foo (1.0.1){Environment.NewLine}"
             ), Times.Once);
 #pragma warning restore CC0031 // Check for null before calling a delegate
         }

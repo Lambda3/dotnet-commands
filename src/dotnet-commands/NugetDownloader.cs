@@ -87,7 +87,7 @@ namespace DotNetCommands
         /// <param name="force">Force the download be made again if it was already downloaded earlier.</param>
         /// <param name="includePreRelease">Allow pre-release versions.</param>
         /// <returns>The directory where it is extracted</returns>
-        public async Task<string> DownloadAndExtractNugetAsync(string packageName, bool force, bool includePreRelease)
+        public async Task<PackageInfo> DownloadAndExtractNugetAsync(string packageName, bool force, bool includePreRelease)
         {
             if (!sourceInfos.Any())
             {
@@ -108,19 +108,22 @@ namespace DotNetCommands
             using (var tempFileStream = File.OpenWrite(tempFilePath))
                 await nupkgResponse.Content.CopyToAsync(tempFileStream);
             var destinationDir = commandDirectory.GetDirectoryForPackage(nugetVersion.PackageName, nugetVersion.Version.ToString());
-            if (Directory.Exists(destinationDir))
+            var packageAlreadyExtracted = Directory.Exists(destinationDir);
+            if (packageAlreadyExtracted && force)
+                Directory.Delete(destinationDir, true);
+            if (packageAlreadyExtracted)
             {
                 WriteLineIfVerbose($"Directory '{destinationDir}' already exists.");
-                if (force)
-                    Directory.Delete(destinationDir, true);
-                else
-                    return destinationDir;
             }
-            WriteLineIfVerbose($"Extracting to '{destinationDir}'.");
-            System.IO.Compression.ZipFile.ExtractToDirectory(tempFilePath, destinationDir);
-            foreach (var fileToRename in Directory.EnumerateFiles(destinationDir, "*.removeext", SearchOption.AllDirectories))
-                File.Move(fileToRename, fileToRename.Substring(0, fileToRename.Length - ".removeext".Length));
-            return destinationDir;
+            else
+            {
+                WriteLineIfVerbose($"Extracting to '{destinationDir}'.");
+                System.IO.Compression.ZipFile.ExtractToDirectory(tempFilePath, destinationDir);
+                foreach (var fileToRename in Directory.EnumerateFiles(destinationDir, "*.removeext", SearchOption.AllDirectories))
+                    File.Move(fileToRename, fileToRename.Substring(0, fileToRename.Length - ".removeext".Length));
+            }
+            var packageInfo = await PackageInfo.GetMainFilePathAsync(nugetVersion.PackageName, destinationDir);
+            return packageInfo;
         }
 
         public void Dispose()

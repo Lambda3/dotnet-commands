@@ -45,9 +45,9 @@ namespace IntegrationTests
         [Test]
         public async Task DownloadDotNetFooWithoutPackageSourcesAsync()
         {
-            var directory = await downloader.DownloadAndExtractNugetAsync("dotnet-foo", force: false, includePreRelease: false);
-            Directory.Exists(directory).Should().BeTrue();
-            var cmd = Directory.EnumerateFiles(directory, "dotnet-foo.cmd", SearchOption.AllDirectories).FirstOrDefault();
+            var packageInfo = await downloader.DownloadAndExtractNugetAsync("dotnet-foo", force: false, includePreRelease: false);
+            Directory.Exists(packageInfo.PackageDir).Should().BeTrue();
+            var cmd = Directory.EnumerateFiles(packageInfo.PackageDir, "dotnet-foo.cmd", SearchOption.AllDirectories).FirstOrDefault();
             cmd.Should().NotBeNull();
             Directory.GetParent(cmd).Name.Should().Be("tools");
         }

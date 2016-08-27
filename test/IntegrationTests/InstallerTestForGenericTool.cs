@@ -33,18 +33,12 @@ namespace IntegrationTests
         }
 
         [Test]
-        public void InstalledSuccessfully()
-        {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                installed.Should().BeTrue();
-            else
-                installed.Should().BeFalse();
-        }
+        public void InstalledSuccessfully() => installed.Should().BeTrue();
 
         [Test]
         public void WroteRedirectFileForWindows()
         {
-            var wroteRedirectFile = File.Exists(Path.Combine(baseDir, "bin", $"{packageName}.cmd"));
+            var wroteRedirectFile = File.Exists(Path.Combine(baseDir, "bin", $"{packageNameCorrectCasing}.cmd"));
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 wroteRedirectFile.Should().BeTrue();
             else
@@ -54,7 +48,7 @@ namespace IntegrationTests
         [Test]
         public void WroteRedirectFileForOtherPlatforms()
         {
-            var wroteRedirectFile = File.Exists(Path.Combine(baseDir, "bin", packageName));
+            var wroteRedirectFile = File.Exists(Path.Combine(baseDir, "bin", packageNameCorrectCasing));
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 wroteRedirectFile.Should().BeTrue();
             else
