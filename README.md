@@ -82,8 +82,12 @@ It is very simple, either:
 to [the one in this project](https://github.com/Lambda3/dotnet-commands/blob/master/src/dotnet-commands/commandMetadata.json)
 and add it to the `content` folder.
 
-If we find `project.json` files we will restore them. So, feel free to add any .NET Tool, and you don't need to add it's
+If we find `project.json` files we will restore them. So, feel free to add any .NET Core Tool, and you don't need to add it's
 dependencies to your nupkg, they will be installed when your project is installed, just remember to add them to your `project.json` file.
+
+If you have a `project.json` file but your tools is not a .NET Core tool, but a full framework (desktop framework, .NET Framework, i.e. .NET 4.6.1) tool
+you **will** need to add the dependencies to the your nupkg, as those are stand alone tools, and will not run using
+.NET CLI, because they produce binaries which cannot be bootstrapped.
 
 Non .NET tool work as well, just follow the rules above.
 
