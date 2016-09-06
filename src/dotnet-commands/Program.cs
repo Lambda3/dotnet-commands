@@ -41,7 +41,11 @@ namespace DotNetCommands
             command = arguments["<command>"]?.ToString();
             var homeDir = Environment.GetEnvironmentVariable("HOME") ?? Environment.GetEnvironmentVariable("userprofile");
             var commandDirectory = new CommandDirectory(Path.Combine(homeDir, ".nuget", "commands"));
-            WriteLineIfVerbose($".NET Commands running on {RuntimeInformation.OSDescription} on {RuntimeInformation.ProcessArchitecture} (system is {RuntimeInformation.OSArchitecture}) with framework {RuntimeInformation.FrameworkDescription}.");
+            if (IsVerbose)
+            {
+                WriteLine($".NET Commands running on {RuntimeInformation.OSDescription} on {RuntimeInformation.ProcessArchitecture} (system is {RuntimeInformation.OSArchitecture}) with framework {RuntimeInformation.FrameworkDescription}.");
+                WriteLine($"Args: {string.Join(" ", args.Select(s => $"\"{s}\""))}");
+            }
             if (arguments["install"].IsTrue)
             {
                 var installer = new Installer(commandDirectory);

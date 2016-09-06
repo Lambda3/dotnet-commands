@@ -16,7 +16,6 @@ namespace DotNetCommands
     public sealed class NugetDownloader : IDisposable
     {
         private readonly CommandDirectory commandDirectory;
-        //private readonly HttpClient client = new HttpClient();
         private IEnumerable<SourceInfo> sourceInfos;
 
         public NugetDownloader(CommandDirectory commandDirectory)
@@ -57,16 +56,27 @@ namespace DotNetCommands
             NugetVersion currentNugetVersion = null;
             foreach (var sourceInfo in sourceInfos)
             {
+                WriteLineIfVerbose($"Searching for '{packageName}' on '{sourceInfo.Source.Name}'...");
                 NugetVersion latestNugetVersion;
                 try
                 {
                     latestNugetVersion = await sourceInfo.GetLatestVersionAsync(packageName, includePreRelease);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    WriteLine($"Error when getting '{packageName}'. Source used: '{sourceInfo.Source.Name}'.");
+                    WriteLineIfVerbose($"Error details: {ex.ToString()}'.");
                     return null;
                 }
-                if (latestNugetVersion == null) continue;
+                if (latestNugetVersion == null)
+                {
+                    WriteLineIfVerbose($"Could not get a version for '{packageName}' on '{sourceInfo.Source.Name}'.");
+                    continue;
+                }
+                else
+                {
+                    WriteLineIfVerbose($"Found version '{latestNugetVersion.Version}' for '{packageName}' on '{sourceInfo.Source.Name}'.");
+                }
                 if (currentNugetVersion == null || latestNugetVersion.Version > currentNugetVersion.Version)
                     currentNugetVersion = latestNugetVersion;
             }
@@ -77,6 +87,7 @@ namespace DotNetCommands
                     WriteLine($" - {source.Name}: {source.Source}");
                 return null;
             }
+            WriteLineIfVerbose($"Latest version for '{packageName}' is '{currentNugetVersion.Version}' from '{currentNugetVersion.SourceInfo.Source.Name}'.");
             return currentNugetVersion;
         }
 
@@ -95,6 +106,11 @@ namespace DotNetCommands
                 return null;
             }
             var nugetVersion = await GetLatestVersionAndSourceInfoAsync(packageName, includePreRelease);
+            if (nugetVersion == null)
+            {
+                WriteLineIfVerbose($"Could not get latest version for package '{packageName}'.");
+                return null;
+            }
             var nupkgResponse = await nugetVersion.GetNupkgAsync(nugetVersion.PackageName);
             if (nupkgResponse == null)
             {
@@ -102,7 +118,10 @@ namespace DotNetCommands
                 return null;
             }
             if (!nupkgResponse.IsSuccessStatusCode)
+            {
+                WriteLineIfVerbose($"Did not get a successful status code. Got {(int)nupkgResponse.StatusCode} ({nupkgResponse.StatusCode}).");
                 return null;
+            }
             var tempFilePath = Path.GetTempFileName();
             WriteLineIfVerbose($"Saving to '{tempFilePath}'.");
             using (var tempFileStream = File.OpenWrite(tempFilePath))
@@ -189,7 +208,11 @@ namespace DotNetCommands
             public async Task<NugetVersion> GetLatestVersionAsync(string packageName, bool includePreRelease)
             {
                 var currentFeed = await GetFeedAsync();
-                if (currentFeed == null) return null;
+                if (currentFeed == null)
+                {
+                    WriteLine("Current feed is null. Returning.");
+                    return null;
+                }
                 var searchQueryServiceUrl = currentFeed.Resources.First(r => r.Type == "SearchQueryService").Id;
                 var serviceUrl = $"{searchQueryServiceUrl}?q=packageid:{packageName}{(includePreRelease ? "&prerelease=true" : "")}";
                 var serviceResponse = await HttpClient.GetAsync(serviceUrl);
@@ -203,7 +226,10 @@ namespace DotNetCommands
                 var serviceData = service.Data.FirstOrDefault();
                 var version = serviceData?.Version;
                 if (version == null)
+                {
+                    WriteLineIfVerbose($"There was no version info for '{packageName}' on '{Source.Name}'.");
                     return null;
+                }
                 WriteLineIfVerbose($"Found version {version}.");
                 var currentSemanticVersion = SemanticVersion.Parse(version);
                 var nugetVersion = new NugetVersion(currentSemanticVersion, this, serviceData.Id);
