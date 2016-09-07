@@ -5,13 +5,17 @@ using System.Reflection;
 using DocoptNet;
 using static DotNetCommands.Logger;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
 namespace DotNetCommands
 {
     public class Program
     {
         private static string command;
-        public static int Main(string[] args)
+
+        public static int Main(string[] args) => RunAsync(args).Result;
+
+        private async static Task<int> RunAsync(string[] args)
         {
             const string usage = @".NET Commands
 
@@ -49,25 +53,25 @@ namespace DotNetCommands
             if (arguments["install"].IsTrue)
             {
                 var installer = new Installer(commandDirectory);
-                var success = installer.InstallAsync(command, arguments["--force"].IsTrue, arguments["--pre"].IsTrue).Result;
+                var success = await installer.InstallAsync(command, arguments["--force"].IsTrue, arguments["--pre"].IsTrue);
                 return success ? 0 : 1;
             }
             if (arguments["uninstall"].IsTrue)
             {
                 var uninstaller = new Uninstaller(commandDirectory);
-                var success = uninstaller.UninstallAsync(command).Result;
+                var success = await uninstaller.UninstallAsync(command);
                 return success ? 0 : 1;
             }
             if (arguments["update"].IsTrue)
             {
                 var updater = new Updater(commandDirectory);
-                var success = updater.UpdateAsync(command, arguments["--force"].IsTrue, arguments["--pre"].IsTrue).Result;
+                var success = await updater.UpdateAsync(command, arguments["--force"].IsTrue, arguments["--pre"].IsTrue);
                 return success ? 0 : 1;
             }
             if (arguments["list"].IsTrue || arguments["ls"].IsTrue)
             {
                 var lister = new Lister(commandDirectory);
-                var success = lister.ListAsync().Result;
+                var success = await lister.ListAsync();
                 return success ? 0 : 1;
             }
             return 0;
