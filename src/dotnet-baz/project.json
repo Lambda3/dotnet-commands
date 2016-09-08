@@ -1,0 +1,45 @@
+﻿{
+    "version": "1.0.0-*",
+    "dependencies": {
+        "Microsoft.NETCore.App": {
+            "type": "platform",
+            "version": "1.0.0"
+        }
+    },
+    "frameworks": {
+        "netcoreapp1.0": { }
+    },
+    "packOptions": {
+        "owners": [ "giggio" ],
+        "repository": {
+            "type": "git",
+            "url": "https://github.com/Lambda3/dotnet-commands"
+        },
+        "files": {
+            "mappings": {
+                "content/commandMetadata.json": "commandMetadata.json",
+                "lib/netcoreapp1.0/dotnet-baz.cmd": "dotnet-baz.cmd",
+                "lib/netcoreapp1.0/dotnet-baz": "dotnet-baz",
+                "lib/netcoreapp1.0/project.json": "project.json",
+                "lib/netcoreapp1.0/project.lock.json": "project.lock.json",
+                "lib/netcoreapp1.0/dotnet-baz.deps.json": "bin/**/netcoreapp1.0/dotnet-baz.deps.json"
+            }
+        }
+    },
+    "publishOptions": {
+        "includeFiles": [
+            "dotnet-baz.cmd",
+            "dotnet-baz"
+        ]
+    },
+    "buildOptions": {
+        "debugType": "portable",
+        "emitEntryPoint": true,
+        "copyToOutput": {
+            "includeFiles": [
+                "dotnet-baz.cmd",
+                "dotnet-baz"
+            ]
+        }
+    }
+}

@@ -29,6 +29,8 @@ Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "dotnet-foo", "src\dotnet-fo
 EndProject
 Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "dotnet-bar", "src\dotnet-bar\dotnet-bar.xproj", "{4EF24C25-61AE-44A9-9203-1F6B278477A5}"
 EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "dotnet-baz", "src\dotnet-baz\dotnet-baz.xproj", "{F6BA3B31-1962-463F-BA15-EA9617BD4489}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +53,10 @@ Global
 		{4EF24C25-61AE-44A9-9203-1F6B278477A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4EF24C25-61AE-44A9-9203-1F6B278477A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4EF24C25-61AE-44A9-9203-1F6B278477A5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F6BA3B31-1962-463F-BA15-EA9617BD4489}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F6BA3B31-1962-463F-BA15-EA9617BD4489}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F6BA3B31-1962-463F-BA15-EA9617BD4489}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F6BA3B31-1962-463F-BA15-EA9617BD4489}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -60,5 +66,6 @@ Global
 		{1D1024DB-9159-42DC-9E73-B797AE7F8E4C} = {1B9D8461-1CA0-44CF-960C-F67BBB92DF7D}
 		{474DE765-DD8A-4AA6-8099-ECA92FF38D79} = {8DAA817E-6F6B-4A44-B53F-2A6D0989DB2D}
 		{4EF24C25-61AE-44A9-9203-1F6B278477A5} = {8DAA817E-6F6B-4A44-B53F-2A6D0989DB2D}
+		{F6BA3B31-1962-463F-BA15-EA9617BD4489} = {8DAA817E-6F6B-4A44-B53F-2A6D0989DB2D}
 	EndGlobalSection
 EndGlobal
