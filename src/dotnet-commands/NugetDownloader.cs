@@ -246,6 +246,7 @@ namespace DotNetCommands
                 if (!serviceResponse.IsSuccessStatusCode)
                 {
                     WriteLine($"Could not get service details from '{serviceUrl}'.");
+                    WriteLineIfVerbose($"Got status code: '{(int)serviceResponse.StatusCode}' ({serviceResponse.StatusCode}).");
                     throw new Exception($"Could not get service details from '{serviceUrl}'.");
                 }
                 var serviceContent = await serviceResponse.Content.ReadAsStringAsync();

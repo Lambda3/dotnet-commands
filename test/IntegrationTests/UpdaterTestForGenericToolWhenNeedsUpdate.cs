@@ -1,12 +1,11 @@
 ﻿using DotNetCommands;
 using FluentAssertions;
+using NuGet.Versioning;
 using NUnit.Framework;
 using System.IO;
-using System.Threading.Tasks;
-using System;
 using System.Linq;
-using NuGet.Versioning;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
 namespace IntegrationTests
 {
@@ -51,34 +50,23 @@ namespace IntegrationTests
         public void ClassCleanup() => commandDirectoryCleanup?.Dispose();
 
         [Test]
-        public void UpdatedSuccessfully()
-        {
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
-            updated.Should().BeTrue();
-        }
+        public void UpdatedSuccessfully() => updated.Should().BeTrue();
 
         [Test]
-        public void UpdatedRedirectFile()
-        {
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
+        public void UpdatedRedirectFile() =>
             File.ReadAllText(Path.Combine(baseDir, "bin", $"{packageName}.cmd")).Should().Contain(version);
-        }
 
         [Test]
-        public void DidNotCreateRuntimeConfigDevJsonFileWithCorrectConfig()
-        {
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
+        public void DidNotCreateRuntimeConfigDevJsonFileWithCorrectConfig() =>
             Directory.EnumerateFiles(baseDir, "*.runtimeconfig.dev.json", SearchOption.AllDirectories).Should().BeEmpty();
-        }
 
         [Test]
         public void UpdatedVersion()
         {
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
             var directory = commandDirectoryCleanup.CommandDirectory.GetDirectoryForPackage(packageName);
             var packageDirectory = Directory.EnumerateDirectories(directory).Single();
             Path.GetFileName(packageDirectory).Should().Be(version);
         }
-        //todo teste para instalar vesao menor
+        //todo install test to smaller version
     }
 }

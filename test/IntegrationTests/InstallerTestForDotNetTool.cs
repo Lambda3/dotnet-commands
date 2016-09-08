@@ -11,7 +11,7 @@ namespace IntegrationTests
     [TestFixture]
     public class InstallerTestForDotNetTool
     {
-        private const string packageName = "dotnet-commands";
+        private const string packageName = "dotnet-baz";
         private CommandDirectoryCleanup commandDirectoryCleanup;
         private Installer installer;
         private bool installed;

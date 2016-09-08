@@ -18,7 +18,7 @@ namespace IntegrationTests
         {
             try
             {
-            Directory.Delete(CommandDirectory.BaseDir, true);
+                Directory.Delete(CommandDirectory.BaseDir, true);
             }
             catch (Exception ex)
             {
