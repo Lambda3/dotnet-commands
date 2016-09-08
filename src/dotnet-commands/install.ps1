@@ -7,7 +7,7 @@ Add-Type -assembly System.IO.Compression.FileSystem
 $outDir = "$outFile-extracted"
 [System.IO.Compression.ZipFile]::ExtractToDirectory($outFile, $outDir)
 Write-Host $outDir
-. "$outDir\dotnet-commands.cmd" install dotnet-commands --verbose --pre
+. "$outDir\dotnet-commands.cmd" bootstrap
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Could not install."
     exit 1

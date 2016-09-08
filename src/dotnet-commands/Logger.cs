@@ -5,7 +5,7 @@ namespace DotNetCommands
     public static class Logger
     {
         private static Action<string> logger = msg => Console.WriteLine(msg);
-        public static bool IsVerbose;
+        public static bool IsVerbose = true;
 
         public static void SetLogger(Action<string> logger)
         {

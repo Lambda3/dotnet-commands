@@ -8,7 +8,7 @@ echo $outDir
 mkdir $outDir
 tar -xvzf $outFile -C $outDir
 echo $outDir
-. "$outDir/dotnet-commands" install dotnet-commands --verbose --pre
+. "$outDir/dotnet-commands" bootstrap
 if [ $? -ne 0 ]; then
     echo "Could not install."
     exit 1

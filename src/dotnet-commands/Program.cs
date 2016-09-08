@@ -21,8 +21,7 @@ namespace DotNetCommands
     dotnet commands install <command> [--force] [--pre] [--verbose]
     dotnet commands uninstall <command> [ --verbose]
     dotnet commands update (<command> | all) [--pre] [--verbose]
-    dotnet commands list [--verbose]
-    dotnet commands ls [--verbose]
+    dotnet commands (list|ls) [--verbose]
     dotnet commands --help
     dotnet commands --version
 
@@ -32,7 +31,16 @@ namespace DotNetCommands
     --verbose                  Verbose. Optional.
     --help -h                  Show this screen.
     --version -v               Show version.
+
 ";
+            var homeDir = Environment.GetEnvironmentVariable("HOME") ?? Environment.GetEnvironmentVariable("userprofile");
+            var commandDirectory = new CommandDirectory(Path.Combine(homeDir, ".nuget", "commands"));
+            if (args.Length == 1 && args[0] == "bootstrap")
+            {
+                var installer = new Installer(commandDirectory);
+                var success = await installer.InstallAsync("dotnet-commands", force: true, includePreRelease: true);
+                return success ? 0 : 1;
+            }
             var argsWithRun = args;
             if (args.Any() && args[0] != "commands")
                 argsWithRun = new[] { "commands" }.Concat(args).ToArray();
@@ -41,8 +49,6 @@ namespace DotNetCommands
             var verbose = arguments["--verbose"].IsTrue;
             Logger.IsVerbose = verbose;
             var command = arguments["<command>"]?.ToString();
-            var homeDir = Environment.GetEnvironmentVariable("HOME") ?? Environment.GetEnvironmentVariable("userprofile");
-            var commandDirectory = new CommandDirectory(Path.Combine(homeDir, ".nuget", "commands"));
             if (IsVerbose)
             {
                 WriteLine($".NET Commands running on {RuntimeInformation.OSDescription} on {RuntimeInformation.ProcessArchitecture} (system is {RuntimeInformation.OSArchitecture}) with framework {RuntimeInformation.FrameworkDescription}.");
