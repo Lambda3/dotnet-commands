@@ -21,10 +21,19 @@ namespace DotNetCommands
         {
             WriteLineIfVerbose($"Installing {packageName}...");
             PackageInfo packageInfo;
-            using (var downloader = new NugetDownloader(commandDirectory))
+            try
             {
-                packageInfo = await downloader.DownloadAndExtractNugetAsync(packageName, force, includePreRelease);
-                if (packageInfo == null) return false;
+                using (var downloader = new NugetDownloader(commandDirectory))
+                {
+                    packageInfo = await downloader.DownloadAndExtractNugetAsync(packageName, force, includePreRelease);
+                    if (packageInfo == null) return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                WriteLineIfVerbose("Could not download Nuget.");
+                WriteLineIfVerbose(ex.ToString());
+                return false;
             }
             var created = CreateBinFile(packageInfo);
             if (!created)

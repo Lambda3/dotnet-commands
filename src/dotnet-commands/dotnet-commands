@@ -2,3 +2,14 @@
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 dotnet $DIR/dotnet-commands.dll "$@"
+EL=$?
+echo $EL
+if [ $EL -eq 200 ]; then
+echo foo
+    #\curl -sSL https://raw.githubusercontent.com/Lambda3/dotnet-commands/master/src/dotnet-commands/install.sh | bash
+    \curl -sSL https://raw.githubusercontent.com/Lambda3/dotnet-commands/master/src/dotnet-commands/install.sh | /c/Program\ Files/Git/usr/bin/bash.exe
+    exit $?
+else
+echo bar
+    exit $EL
+fi

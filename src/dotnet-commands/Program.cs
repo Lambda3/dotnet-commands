@@ -11,8 +11,6 @@ namespace DotNetCommands
 {
     public class Program
     {
-        private static string command;
-
         public static int Main(string[] args) => RunAsync(args).Result;
 
         private async static Task<int> RunAsync(string[] args)
@@ -42,7 +40,7 @@ namespace DotNetCommands
             var arguments = new Docopt().Apply(usage, argsWithRun, version: version, exit: true);
             var verbose = arguments["--verbose"].IsTrue;
             Logger.IsVerbose = verbose;
-            command = arguments["<command>"]?.ToString();
+            var command = arguments["<command>"]?.ToString();
             var homeDir = Environment.GetEnvironmentVariable("HOME") ?? Environment.GetEnvironmentVariable("userprofile");
             var commandDirectory = new CommandDirectory(Path.Combine(homeDir, ".nuget", "commands"));
             if (IsVerbose)
@@ -50,14 +48,30 @@ namespace DotNetCommands
                 WriteLine($".NET Commands running on {RuntimeInformation.OSDescription} on {RuntimeInformation.ProcessArchitecture} (system is {RuntimeInformation.OSArchitecture}) with framework {RuntimeInformation.FrameworkDescription}.");
                 WriteLine($"Args: {string.Join(" ", args.Select(s => $"\"{s}\""))}");
             }
+
+            if (command == "dotnet-commands" && (arguments["install"].IsTrue || arguments["update"].IsTrue))
+            {
+                WriteLineIfVerbose("Request to update .NET Commands.");
+                var updater = new Updater(commandDirectory);
+                var shouldntUpdate = await updater.ShouldntUpdateAsync(command, arguments["--pre"].IsTrue);
+                var exitCode = shouldntUpdate ? 0 : 200;
+                WriteLineIfVerbose($"Should update .NET Commands: {!shouldntUpdate}, exit code is going to be {exitCode}.");
+                return exitCode;
+            }
             if (arguments["install"].IsTrue)
             {
+
                 var installer = new Installer(commandDirectory);
                 var success = await installer.InstallAsync(command, arguments["--force"].IsTrue, arguments["--pre"].IsTrue);
                 return success ? 0 : 1;
             }
             if (arguments["uninstall"].IsTrue)
             {
+                if (command == "dotnet-commands")
+                {
+                    WriteLine("Can't uninstall .NET Commands.");
+                    return 1;
+                }
                 var uninstaller = new Uninstaller(commandDirectory);
                 var success = await uninstaller.UninstallAsync(command);
                 return success ? 0 : 1;

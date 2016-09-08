@@ -16,5 +16,5 @@ $path = [Environment]::GetEnvironmentVariable("PATH", "User")
 if ($path -notlike "*$env:USERPROFILE\.nuget\commands\bin;*") {
     $newPath = "$env:USERPROFILE\.nuget\commands\bin;$path"
     [Environment]::SetEnvironmentVariable("PATH", $newPath, "User")
-    $env:Path="$env:USERPROFILE\.nuget\commands\bin;$env:Path"    
+    $env:Path="$env:USERPROFILE\.nuget\commands\bin;$env:Path"
 }

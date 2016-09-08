@@ -16,20 +16,28 @@ namespace DotNetCommands
     public sealed class NugetDownloader : IDisposable
     {
         private readonly CommandDirectory commandDirectory;
-        private IEnumerable<SourceInfo> sourceInfos;
+        private IList<SourceInfo> sourceInfos;
 
         public NugetDownloader(CommandDirectory commandDirectory)
         {
             this.commandDirectory = commandDirectory;
             var sources = GetSources();
-            sourceInfos = sources.Select(s => new SourceInfo(s));
+            sourceInfos = sources.Select(s => new SourceInfo(s)).ToList();
         }
+
+        private class PackageSourceComparer : IEqualityComparer<PackageSource>
+        {
+            public bool Equals(PackageSource x, PackageSource y) => string.Compare(x.Source, y.Source, true) == 0;
+            public int GetHashCode(PackageSource source) => source.Source.GetHashCode() * 13;
+        }
+
+        private static readonly PackageSourceComparer packageSourceComparer = new PackageSourceComparer();
 
         private static IList<PackageSource> GetSources()
         {
             var settings = Settings.LoadDefaultSettings(Directory.GetCurrentDirectory(), configFileName: null, machineWideSettings: new MachineWideSettings());
             var sourceProvider = new PackageSourceProvider(settings);
-            var sources = sourceProvider.LoadPackageSources().Where(s => s.ProtocolVersion == 3 || s.Source.EndsWith(@"/v3/index.json")).ToList();
+            var sources = sourceProvider.LoadPackageSources().Where(s => s.ProtocolVersion == 3 || s.Source.EndsWith(@"/v3/index.json")).Distinct(packageSourceComparer).ToList();
             if (!sources.Any())
             {
                 var source = new PackageSource("https://api.nuget.org/v3/index.json", "api.nuget.org", isEnabled: true, isOfficial: true, isPersistable: true)
@@ -213,8 +221,27 @@ namespace DotNetCommands
                     WriteLine("Current feed is null. Returning.");
                     return null;
                 }
-                var searchQueryServiceUrl = currentFeed.Resources.First(r => r.Type == "SearchQueryService").Id;
-                var serviceUrl = $"{searchQueryServiceUrl}?q=packageid:{packageName}{(includePreRelease ? "&prerelease=true" : "")}";
+                var searchQueryServiceUrl = currentFeed.Resources.FirstOrDefault(r => r.Type == "SearchQueryService")?.Id;
+                if (searchQueryServiceUrl == null)
+                    searchQueryServiceUrl = currentFeed.Resources.FirstOrDefault(r => r.Type == "SearchQueryService/3.0.0-rc")?.Id;
+                string serviceUrl;
+                bool supportsQueryById;
+                if (searchQueryServiceUrl == null)
+                {
+                    searchQueryServiceUrl = currentFeed.Resources.FirstOrDefault(r => r.Type == "SearchQueryService/3.0.0-beta")?.Id; //vsts is still in this version
+                    if (searchQueryServiceUrl == null)
+                    {
+                        WriteLine("Nuget server does not offer a search query service we can work with.");
+                        return null;
+                    }
+                    serviceUrl = $"{searchQueryServiceUrl}?q={packageName}{(includePreRelease ? "&prerelease=true" : "")}";
+                    supportsQueryById = false;
+                }
+                else
+                {
+                    serviceUrl = $"{searchQueryServiceUrl}?q=packageid:{packageName}{(includePreRelease ? "&prerelease=true" : "")}";
+                    supportsQueryById = true;
+                }
                 var serviceResponse = await HttpClient.GetAsync(serviceUrl);
                 if (!serviceResponse.IsSuccessStatusCode)
                 {
@@ -223,7 +250,9 @@ namespace DotNetCommands
                 }
                 var serviceContent = await serviceResponse.Content.ReadAsStringAsync();
                 var service = await Task.Factory.StartNew(() => JsonConvert.DeserializeObject<Service>(serviceContent));
-                var serviceData = service.Data.FirstOrDefault();
+                var serviceData = supportsQueryById
+                    ? service.Data.FirstOrDefault()
+                    : service.Data.FirstOrDefault(sd => string.Compare(sd.Id, packageName, true) == 0);
                 var version = serviceData?.Version;
                 if (version == null)
                 {
@@ -241,9 +270,33 @@ namespace DotNetCommands
 
             private void UpdateAuthorizationForClient()
             {
-                HttpClient.DefaultRequestHeaders.Authorization = Source.Credentials != null
-                    ? new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes($"{Source.Credentials.Username}:{Source.Credentials.PasswordText}")))
-                    : null;
+                if (Source.Credentials != null)
+                {
+                    string password = null;
+                    if (Source.Credentials.IsPasswordClearText)
+                    {
+                        password = Source.Credentials.PasswordText;
+                    }
+                    else
+                    {
+                        try
+                        {
+                            password = Source.Credentials.Password;
+                        }
+                        catch (Exception ex)
+                        {
+                            WriteLine($"Could not get password for source '{Source.Name}'.");
+                            WriteLineIfVerbose(ex.ToString());
+                            throw;
+                        }
+                    }
+                    HttpClient.DefaultRequestHeaders.Authorization =
+                        new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes($"{Source.Credentials.Username}:{password}")));
+                }
+                else
+                {
+                    HttpClient.DefaultRequestHeaders.Authorization = null;
+                }
             }
 
             public async Task<HttpResponseMessage> GetNupkgAsync(SemanticVersion semanticVersion, string packageName)
