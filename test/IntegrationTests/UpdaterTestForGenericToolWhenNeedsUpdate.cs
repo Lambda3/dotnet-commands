@@ -4,8 +4,8 @@ using NuGet.Versioning;
 using NUnit.Framework;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using static IntegrationTests.Retrier;
 
 namespace IntegrationTests
 {
@@ -19,9 +19,10 @@ namespace IntegrationTests
         private string version;
 
         [OneTimeSetUp]
-        public async Task ClassInitialize()
+        public Task OneTimeSetUp() => RetryAsync(SetupAsync);
+
+        private async Task SetupAsync()
         {
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
             commandDirectoryCleanup = new CommandDirectoryCleanup();
             baseDir = commandDirectoryCleanup.CommandDirectory.BaseDir;
             var installer = new Installer(commandDirectoryCleanup.CommandDirectory);
@@ -30,6 +31,7 @@ namespace IntegrationTests
             installed.Should().BeTrue();
             var updater = new Updater(commandDirectoryCleanup.CommandDirectory);
             updated = await updater.UpdateAsync(packageName, force: false, includePreRelease: false);
+            updated.Should().BeTrue();
         }
 
         private void MoveToPreviousVersion()
@@ -48,9 +50,6 @@ namespace IntegrationTests
 
         [OneTimeTearDown]
         public void ClassCleanup() => commandDirectoryCleanup?.Dispose();
-
-        [Test]
-        public void UpdatedSuccessfully() => updated.Should().BeTrue();
 
         [Test]
         public void UpdatedRedirectFile() =>

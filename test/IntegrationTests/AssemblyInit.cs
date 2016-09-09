@@ -12,8 +12,8 @@ namespace IntegrationTests
         [OneTimeSetUp]
         public static void AssemblyInitialize()
         {
-            DotNetCommands.Logger.IsVerbose = true;
-            DotNetCommands.Logger.SetLogger(msg => Console.WriteLine($"[Tool {DateTime.Now.ToString("MM/dd/yy hh:mm:ss")}] {msg}"));
+            IsVerbose = true;
+            SetLogger(msg => Console.WriteLine($"[Tool {DateTime.Now.ToString("MM/dd/yy hh:mm:ss")}] {msg}"));
             WriteLineIfVerbose($".NET Commands running on {RuntimeInformation.OSDescription} on {RuntimeInformation.ProcessArchitecture} (system is {RuntimeInformation.OSArchitecture}) with framework {RuntimeInformation.FrameworkDescription}.");
         }
     }

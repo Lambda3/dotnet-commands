@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using static IntegrationTests.Retrier;
 
 namespace IntegrationTests
 {
@@ -17,7 +18,7 @@ namespace IntegrationTests
         private string currentDirectoryWhenTestStarted;
 
         [OneTimeSetUp]
-        public void ClassInitialize()
+        public void OneTimeSetUp()
         {
             currentDirectoryWhenTestStarted = Directory.GetCurrentDirectory();
             tempPath = Path.Combine(Path.GetTempPath(), "DotNetTempPath" + Guid.NewGuid().ToString().Replace("-", "").Substring(0, 10));
@@ -42,7 +43,7 @@ namespace IntegrationTests
 #pragma warning restore CC0004 // Catch block cannot be empty
         }
 
-        [Test]
+        [Test, Retry]
         public async Task DownloadDotNetFooWithoutPackageSourcesAsync()
         {
             var packageInfo = await downloader.DownloadAndExtractNugetAsync("dotnet-foo", force: false, includePreRelease: false);

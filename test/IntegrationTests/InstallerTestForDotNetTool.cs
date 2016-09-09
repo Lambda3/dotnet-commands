@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using static IntegrationTests.Retrier;
 
 namespace IntegrationTests
 {
@@ -18,25 +19,22 @@ namespace IntegrationTests
         private string baseDir;
 
         [OneTimeSetUp]
-        public async Task ClassInitializeAsync()
+        public Task OneTimeSetUp() => RetryAsync(SetupAsync);
+
+        public async Task SetupAsync()
         {
             commandDirectoryCleanup = new CommandDirectoryCleanup();
             baseDir = commandDirectoryCleanup.CommandDirectory.BaseDir;
             installer = new Installer(commandDirectoryCleanup.CommandDirectory);
             installed = await installer.InstallAsync(packageName, force: false, includePreRelease: true);
+            installed.Should().BeTrue();
         }
 
         [OneTimeTearDown]
-        public void ClassCleanup()
-        {
-            commandDirectoryCleanup.Dispose();
-        }
+        public void ClassCleanup() => commandDirectoryCleanup.Dispose();
 
         [Test]
-        public void InstalledSuccessfully() => installed.Should().BeTrue();
-
-        [Test]
-        public void WroteRedirectFile() => File.Exists(Path.Combine(baseDir, "bin", $"{packageName}{(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ".cmd" :"")}")).Should().BeTrue();
+        public void WroteRedirectFile() => File.Exists(Path.Combine(baseDir, "bin", $"{packageName}{(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ".cmd" : "")}")).Should().BeTrue();
 
         [Test]
         public void CreatedRuntimeConfigDevJsonFileWithCorrectConfig()

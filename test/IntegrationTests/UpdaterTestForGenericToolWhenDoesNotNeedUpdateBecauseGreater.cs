@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System;
 using System.Linq;
 using NuGet.Versioning;
-using System.Runtime.InteropServices;
+using static IntegrationTests.Retrier;
 
 namespace IntegrationTests
 {
@@ -21,9 +21,10 @@ namespace IntegrationTests
         private DateTime lastWriteTimeForPackageDir;
 
         [OneTimeSetUp]
-        public async Task ClassInitializeAsync()
+        public Task OneTimeSetUp() => RetryAsync(SetupAsync);
+
+        public async Task SetupAsync()
         {
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
             commandDirectoryCleanup = new CommandDirectoryCleanup();
             baseDir = commandDirectoryCleanup.CommandDirectory.BaseDir;
             var installer = new Installer(commandDirectoryCleanup.CommandDirectory);
@@ -33,6 +34,7 @@ namespace IntegrationTests
             GetLastWriteTimes();
             var updater = new Updater(commandDirectoryCleanup.CommandDirectory);
             updated = await updater.UpdateAsync(packageName, force: false, includePreRelease: false);
+            updated.Should().BeTrue();
         }
 
         private void MoveToLaterVersion()
@@ -60,23 +62,12 @@ namespace IntegrationTests
         public void ClassCleanup() => commandDirectoryCleanup?.Dispose();
 
         [Test]
-        public void UpdatedSuccessfully()
-        {
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
-            updated.Should().BeTrue();
-        }
-
-        [Test]
-        public void DidNotUpdateRedirectFile()
-        {
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
+        public void DidNotUpdateRedirectFile() =>
             new FileInfo(Path.Combine(baseDir, "bin", $"{packageName}.cmd")).LastWriteTime.Should().Be(lastWriteTimeForBinFile);
-        }
 
         [Test]
         public void DidNotUpdatePackageDir()
         {
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
             var directory = commandDirectoryCleanup.CommandDirectory.GetDirectoryForPackage(packageName);
             var packageDir = Directory.EnumerateDirectories(directory).First();
             new DirectoryInfo(packageDir).LastWriteTime.Should().Be(lastWriteTimeForPackageDir);

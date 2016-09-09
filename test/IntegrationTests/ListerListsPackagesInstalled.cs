@@ -4,6 +4,7 @@ using Moq;
 using NUnit.Framework;
 using System;
 using System.Threading.Tasks;
+using static IntegrationTests.Retrier;
 
 namespace IntegrationTests
 {
@@ -15,7 +16,9 @@ namespace IntegrationTests
         private bool isVerbose;
 
         [OneTimeSetUp]
-        public async Task ClassInitialize()
+        public Task OneTimeSetUp() => RetryAsync(SetupAsync);
+
+        public async Task SetupAsync()
         {
             isVerbose = Logger.IsVerbose;
             commandDirectoryCleanup = new CommandDirectoryCleanup();

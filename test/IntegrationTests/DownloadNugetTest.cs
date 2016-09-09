@@ -27,7 +27,7 @@ namespace IntegrationTests
             commandDirectoryCleanup.Dispose();
         }
 
-        [Test]
+        [Test, Retry]
         public async Task DownloadDotNetFooAsync()
         {
             var packageInfo = await downloader.DownloadAndExtractNugetAsync("dotnet-foo", force: false, includePreRelease: false);

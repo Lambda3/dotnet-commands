@@ -4,6 +4,7 @@ using NUnit.Framework;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using static IntegrationTests.Retrier;
 
 namespace IntegrationTests
 {
@@ -18,22 +19,19 @@ namespace IntegrationTests
         private string baseDir;
 
         [OneTimeSetUp]
-        public async Task ClassInitialize()
+        public Task OneTimeSetUp() => RetryAsync(SetupAsync);
+
+        public async Task SetupAsync()
         {
             commandDirectoryCleanup = new CommandDirectoryCleanup();
             baseDir = commandDirectoryCleanup.CommandDirectory.BaseDir;
             installer = new Installer(commandDirectoryCleanup.CommandDirectory);
             installed = await installer.InstallAsync(packageName, force: false, includePreRelease: false);
+            installed.Should().BeTrue();
         }
 
         [OneTimeTearDown]
-        public void ClassCleanup()
-        {
-            commandDirectoryCleanup.Dispose();
-        }
-
-        [Test]
-        public void InstalledSuccessfully() => installed.Should().BeTrue();
+        public void ClassCleanup() => commandDirectoryCleanup.Dispose();
 
         [Test]
         public void WroteRedirectFileForWindows()
