@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System;
 using System.Linq;
 using static IntegrationTests.Retrier;
+using System.Runtime.InteropServices;
 
 namespace IntegrationTests
 {
@@ -37,7 +38,7 @@ namespace IntegrationTests
 
         private void GetLastWriteTimes()
         {
-            lastWriteTimeForBinFile = new FileInfo(Path.Combine(baseDir, "bin", $"{packageName}.cmd")).LastWriteTime;
+            lastWriteTimeForBinFile = new FileInfo(Path.Combine(baseDir, "bin", $"{packageName}{(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ".cmd" : "")}")).LastWriteTime;
             var directory = commandDirectoryCleanup.CommandDirectory.GetDirectoryForPackage(packageName);
             var packageDir = Directory.EnumerateDirectories(directory).First();
             lastWriteTimeForPackageDir = new DirectoryInfo(packageDir).LastWriteTime;
@@ -48,7 +49,7 @@ namespace IntegrationTests
 
         [Test]
         public void DidNotUpdateRedirectFile() =>
-            new FileInfo(Path.Combine(baseDir, "bin", $"{packageName}.cmd")).LastWriteTime.Should().Be(lastWriteTimeForBinFile);
+            new FileInfo(Path.Combine(baseDir, "bin", $"{packageName}{(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ".cmd" : "")}")).LastWriteTime.Should().Be(lastWriteTimeForBinFile);
 
         [Test]
         public void DidNotUpdatePackageDir()

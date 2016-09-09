@@ -7,6 +7,7 @@ using System;
 using System.Linq;
 using NuGet.Versioning;
 using static IntegrationTests.Retrier;
+using System.Runtime.InteropServices;
 
 namespace IntegrationTests
 {
@@ -46,13 +47,13 @@ namespace IntegrationTests
             var greaterVersion = new SemanticVersion(semanticVersion.Major + 1, semanticVersion.Minor, semanticVersion.Patch, semanticVersion.ReleaseLabels, semanticVersion.Metadata).ToString();
             var newPackageDir = Path.Combine(Directory.GetParent(packageDir).ToString(), greaterVersion);
             Directory.Move(packageDir, newPackageDir);
-            var binFile = Path.Combine(baseDir, "bin", $"{packageName}.cmd");
+            var binFile = Path.Combine(baseDir, "bin", $"{packageName}{(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ".cmd" : "")}");
             File.WriteAllText(binFile, File.ReadAllText(binFile).Replace(version, greaterVersion));
         }
 
         private void GetLastWriteTimes()
         {
-            lastWriteTimeForBinFile = new FileInfo(Path.Combine(baseDir, "bin", $"{packageName}.cmd")).LastWriteTime;
+            lastWriteTimeForBinFile = new FileInfo(Path.Combine(baseDir, "bin", $"{packageName}{(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ".cmd" : "")}")).LastWriteTime;
             var directory = commandDirectoryCleanup.CommandDirectory.GetDirectoryForPackage(packageName);
             var packageDir = Directory.EnumerateDirectories(directory).First();
             lastWriteTimeForPackageDir = new DirectoryInfo(packageDir).LastWriteTime;
@@ -63,7 +64,7 @@ namespace IntegrationTests
 
         [Test]
         public void DidNotUpdateRedirectFile() =>
-            new FileInfo(Path.Combine(baseDir, "bin", $"{packageName}.cmd")).LastWriteTime.Should().Be(lastWriteTimeForBinFile);
+            new FileInfo(Path.Combine(baseDir, "bin", $"{packageName}{(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ".cmd" : "")}")).LastWriteTime.Should().Be(lastWriteTimeForBinFile);
 
         [Test]
         public void DidNotUpdatePackageDir()

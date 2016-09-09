@@ -4,6 +4,7 @@ using NuGet.Versioning;
 using NUnit.Framework;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using static IntegrationTests.Retrier;
 
@@ -44,7 +45,7 @@ namespace IntegrationTests
             var smallerVersion = new SemanticVersion(semanticVersion.Major - 1, semanticVersion.Minor, semanticVersion.Patch + 1, semanticVersion.ReleaseLabels, semanticVersion.Metadata).ToString();
             var newPackageDir = Path.Combine(Directory.GetParent(packageDir).ToString(), smallerVersion);
             Directory.Move(packageDir, newPackageDir);
-            var binFile = Path.Combine(baseDir, "bin", $"{packageName}.cmd");
+            var binFile = Path.Combine(baseDir, "bin", $"{packageName}{(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ".cmd" : "")}");
             File.WriteAllText(binFile, File.ReadAllText(binFile).Replace(version, smallerVersion));
         }
 
@@ -53,7 +54,7 @@ namespace IntegrationTests
 
         [Test]
         public void UpdatedRedirectFile() =>
-            File.ReadAllText(Path.Combine(baseDir, "bin", $"{packageName}.cmd")).Should().Contain(version);
+            File.ReadAllText(Path.Combine(baseDir, "bin", $"{packageName}{(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ".cmd" : "")}")).Should().Contain(version);
 
         [Test]
         public void DidNotCreateRuntimeConfigDevJsonFileWithCorrectConfig() =>
