@@ -1,7 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env bash
 releases=$(curl https://github.com/Lambda3/dotnet-commands/releases.atom)
 uri="https://github.com/Lambda3/dotnet-commands/releases/download/$(echo $releases | grep -oPm1 "(?<=<title>)[^<]+" | sed -n 2p)/dotnet-commands.tar.gz"
-outFile=`tempfile`
+if command -v tempfile >/dev/null 2>&1; then
+    outFile=`tempfile`
+else
+    outFile=`mktemp`
+fi
 curl -o $outFile -L $uri
 outDir="$outFile-extracted"
 echo $outDir
