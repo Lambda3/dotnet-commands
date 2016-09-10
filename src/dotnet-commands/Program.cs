@@ -39,7 +39,7 @@ namespace DotNetCommands
             {
                 var installer = new Installer(commandDirectory);
                 var success = await installer.InstallAsync("dotnet-commands", force: true, includePreRelease: true);
-                return success ? 0 : 1;
+                return (int)(success ? ExitCodes.Success : ExitCodes.BootstrapFailed);
             }
             var argsWithRun = args;
             if (args.Any() && args[0] != "commands")
@@ -59,42 +59,67 @@ namespace DotNetCommands
             {
                 WriteLineIfVerbose("Request to update .NET Commands.");
                 var updater = new Updater(commandDirectory);
-                var shouldntUpdate = await updater.ShouldntUpdateAsync(command, arguments["--pre"].IsTrue);
-                var exitCode = shouldntUpdate ? 0 : 200;
-                WriteLineIfVerbose($"Should update .NET Commands: {!shouldntUpdate}, exit code is going to be {exitCode}.");
-                return exitCode;
+                var updateNeeded = await updater.IsUpdateNeeded(command, arguments["--pre"].IsTrue);
+                var exitCode = updateNeeded == Updater.UpdateNeeded.Yes ? ExitCodes.StartUpdate : ExitCodes.Success;
+                WriteLineIfVerbose($"Should update .NET Commands: {updateNeeded}, exit code is going to be {exitCode} ({(int)exitCode}).");
+                return (int)exitCode;
             }
             if (arguments["install"].IsTrue)
             {
 
                 var installer = new Installer(commandDirectory);
                 var success = await installer.InstallAsync(command, arguments["--force"].IsTrue, arguments["--pre"].IsTrue);
-                return success ? 0 : 1;
+                return (int)(success ? ExitCodes.Success : ExitCodes.InstallFailed);
             }
             if (arguments["uninstall"].IsTrue)
             {
                 if (command == "dotnet-commands")
                 {
                     WriteLine("Can't uninstall .NET Commands.");
-                    return 1;
+                    return (int)ExitCodes.CantUninstallDotNetCommands;
                 }
                 var uninstaller = new Uninstaller(commandDirectory);
                 var success = await uninstaller.UninstallAsync(command);
-                return success ? 0 : 1;
+                return (int)(success ? ExitCodes.Success : ExitCodes.UninstallFailed);
             }
             if (arguments["update"].IsTrue)
             {
                 var updater = new Updater(commandDirectory);
-                var success = await updater.UpdateAsync(command, arguments["--force"].IsTrue, arguments["--pre"].IsTrue);
-                return success ? 0 : 1;
+                var updateResult = await updater.UpdateAsync(command, arguments["--force"].IsTrue, arguments["--pre"].IsTrue);
+                switch (updateResult)
+                {
+                    case Updater.UpdateResult.NotNeeded:
+                    case Updater.UpdateResult.Success:
+                        return (int)ExitCodes.Success;
+                    case Updater.UpdateResult.PackageNotFound:
+                        return (int)ExitCodes.PackageNotFound;
+                    case Updater.UpdateResult.CouldntUninstall:
+                        return (int)ExitCodes.CouldntUninstall;
+                    case Updater.UpdateResult.UninstalledAndNotReinstalled:
+                        return (int)ExitCodes.UninstalledAndNotReinstalled;
+                }
             }
             if (arguments["list"].IsTrue || arguments["ls"].IsTrue)
             {
                 var lister = new Lister(commandDirectory);
                 var success = await lister.ListAsync();
-                return success ? 0 : 1;
+                return (int)(success ? ExitCodes.Success : ExitCodes.ListFailed);
             }
-            return 0;
+            return (int)ExitCodes.Success;
+        }
+
+        enum ExitCodes : byte // 0 and from 64-113 according to http://tldp.org/LDP/abs/html/exitcodes.html
+        {
+            Success = 0,
+            PackageNotFound = 64,
+            CouldntUninstall = 65,
+            UninstalledAndNotReinstalled = 66,
+            ListFailed = 67,
+            BootstrapFailed = 68,
+            InstallFailed = 69,
+            UninstallFailed = 70,
+            CantUninstallDotNetCommands = 71,
+            StartUpdate = 113
         }
     }
 }

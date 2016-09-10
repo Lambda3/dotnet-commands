@@ -15,7 +15,6 @@ namespace IntegrationTests
     {
         private const string packageName = "dotnet-foo";
         private CommandDirectoryCleanup commandDirectoryCleanup;
-        private bool updated;
         private string baseDir;
         private string version;
 
@@ -31,8 +30,8 @@ namespace IntegrationTests
             MoveToPreviousVersion();
             installed.Should().BeTrue();
             var updater = new Updater(commandDirectoryCleanup.CommandDirectory);
-            updated = await updater.UpdateAsync(packageName, force: false, includePreRelease: false);
-            updated.Should().BeTrue();
+            var updateResult = await updater.UpdateAsync(packageName, force: false, includePreRelease: false);
+            updateResult.Should().Be(Updater.UpdateResult.Success);
         }
 
         private void MoveToPreviousVersion()

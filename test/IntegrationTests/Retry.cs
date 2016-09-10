@@ -13,7 +13,7 @@ namespace IntegrationTests
     {
         private int count;
 
-        public RetryAttribute(int count = 5) : base(count)
+        public RetryAttribute(int count = 10) : base(count)
         {
             this.count = count;
         }
@@ -47,7 +47,7 @@ namespace IntegrationTests
 
     public static class Retrier
     {
-        public static void Retry(Action action, int count = 5)
+        public static void Retry(Action action, int count = 10)
         {
             if (count <= 1) throw new ArgumentException("Retry count needs to be larger than 1.", nameof(count));
             while (true)
@@ -64,7 +64,7 @@ namespace IntegrationTests
             }
         }
 
-        public async static Task RetryAsync(Func<Task> asyncAction, int count = 5)
+        public async static Task RetryAsync(Func<Task> asyncAction, int count = 10)
         {
             if (count <= 1) throw new ArgumentException("Retry count needs to be larger than 1.", nameof(count));
             while (true)
