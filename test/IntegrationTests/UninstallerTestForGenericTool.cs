@@ -2,6 +2,7 @@
 using FluentAssertions;
 using NUnit.Framework;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using static IntegrationTests.Retrier;
 
@@ -36,7 +37,7 @@ namespace IntegrationTests
 
         [Test]
         public void DeletedRedirectFile() =>
-            File.Exists(Path.Combine(baseDir, "bin", $"{packageName}.cmd")).Should().BeFalse();
+            File.Exists(Path.Combine(baseDir, "bin", $"{packageName}{(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ".cmd" : "")}")).Should().BeFalse();
 
         [Test]
         public void DeletedPackageDirectory() =>

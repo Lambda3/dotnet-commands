@@ -12,22 +12,26 @@ namespace IntegrationTests
     public sealed class RetryAttribute : PropertyAttribute, IWrapSetUpTearDown
     {
         private int count;
+        private int waitInMilliseconds;
 
-        public RetryAttribute(int count = 10) : base(count)
+        public RetryAttribute(int count = 20, int waitInMilliseconds = 500) : base(count)
         {
             this.count = count;
+            this.waitInMilliseconds = waitInMilliseconds;
         }
 
-        public TestCommand Wrap(TestCommand command) => new RetryCommand(command, count);
+        public TestCommand Wrap(TestCommand command) => new RetryCommand(command, count, waitInMilliseconds);
 
         private class RetryCommand : DelegatingTestCommand
         {
             private int retryCount;
+            private int waitInMilliseconds;
 
-            public RetryCommand(TestCommand innerCommand, int retryCount)
+            public RetryCommand(TestCommand innerCommand, int retryCount, int waitInMilliseconds)
                 : base(innerCommand)
             {
                 this.retryCount = retryCount;
+                this.waitInMilliseconds = waitInMilliseconds;
             }
 
             public override TestResult Execute(TestExecutionContext context)
@@ -39,6 +43,7 @@ namespace IntegrationTests
                     if (context.CurrentResult.ResultState != ResultState.Failure
                         && context.CurrentResult.ResultState != ResultState.Error)
                         break;
+                    System.Threading.Thread.Sleep(waitInMilliseconds);
                 }
                 return context.CurrentResult;
             }
@@ -47,7 +52,7 @@ namespace IntegrationTests
 
     public static class Retrier
     {
-        public static void Retry(Action action, int count = 10)
+        public static void Retry(Action action, int count = 20, int waitInMilliseconds = 500)
         {
             if (count <= 1) throw new ArgumentException("Retry count needs to be larger than 1.", nameof(count));
             while (true)
@@ -60,11 +65,12 @@ namespace IntegrationTests
                 catch (Exception ex) when (--count > 0)
                 {
                     WriteMessage(ex.Message, count);
+                    System.Threading.Thread.Sleep(waitInMilliseconds);
                 }
             }
         }
 
-        public async static Task RetryAsync(Func<Task> asyncAction, int count = 10)
+        public async static Task RetryAsync(Func<Task> asyncAction, int count = 20, int waitInMilliseconds = 500)
         {
             if (count <= 1) throw new ArgumentException("Retry count needs to be larger than 1.", nameof(count));
             while (true)
@@ -77,6 +83,7 @@ namespace IntegrationTests
                 catch (Exception ex) when (--count > 0)
                 {
                     WriteMessage(ex.Message, count);
+                    await Task.Delay(waitInMilliseconds);
                 }
             }
         }
