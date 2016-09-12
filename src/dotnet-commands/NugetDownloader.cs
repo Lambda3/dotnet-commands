@@ -135,19 +135,19 @@ namespace DotNetCommands
             using (var tempFileStream = File.OpenWrite(tempFilePath))
                 await nupkgResponse.Content.CopyToAsync(tempFileStream);
             var destinationDir = commandDirectory.GetDirectoryForPackage(nugetVersion.PackageName, nugetVersion.Version.ToString());
-            var packageAlreadyExtracted = Directory.Exists(destinationDir);
-            if (packageAlreadyExtracted && force)
+            if (force)
                 Directory.Delete(destinationDir, true);
-            if (packageAlreadyExtracted)
-            {
-                WriteLineIfVerbose($"Directory '{destinationDir}' already exists.");
-            }
-            else
+            var shouldExtract = force || !Directory.Exists(destinationDir);
+            if (shouldExtract)
             {
                 WriteLineIfVerbose($"Extracting to '{destinationDir}'.");
                 System.IO.Compression.ZipFile.ExtractToDirectory(tempFilePath, destinationDir);
                 foreach (var fileToRename in Directory.EnumerateFiles(destinationDir, "*.removeext", SearchOption.AllDirectories))
                     File.Move(fileToRename, fileToRename.Substring(0, fileToRename.Length - ".removeext".Length));
+            }
+            else
+            {
+                WriteLineIfVerbose($"Directory '{destinationDir}' already exists.");
             }
             var packageInfo = await PackageInfo.GetMainFilePathAsync(nugetVersion.PackageName, destinationDir);
             return packageInfo;
