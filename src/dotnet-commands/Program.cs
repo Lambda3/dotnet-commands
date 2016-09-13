@@ -76,7 +76,7 @@ namespace DotNetCommands
                         command = commandParts[0];
                         try
                         {
-                            packageVersion = NuGet.Versioning.SemanticVersion.Parse(commandParts[0]);
+                            packageVersion = NuGet.Versioning.SemanticVersion.Parse(commandParts[1]);
                         }
                         catch (ArgumentException)
                         {
