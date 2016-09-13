@@ -30,7 +30,7 @@ namespace IntegrationTests
         [Test, Retry]
         public async Task DownloadDotNetFooAsync()
         {
-            var packageInfo = await downloader.DownloadAndExtractNugetAsync("dotnet-foo", force: false, includePreRelease: false);
+            var packageInfo = await downloader.DownloadAndExtractNugetAsync("dotnet-foo", null, force: false, includePreRelease: false);
             Directory.Exists(packageInfo.PackageDir).Should().BeTrue();
             var cmd = Directory.EnumerateFiles(packageInfo.PackageDir, "dotnet-foo.cmd", SearchOption.AllDirectories).FirstOrDefault();
             cmd.Should().NotBeNull();

@@ -1,3 +1,4 @@
+using NuGet.Versioning;
 using System.IO;
 
 namespace DotNetCommands
@@ -23,10 +24,10 @@ namespace DotNetCommands
                 Directory.CreateDirectory(binDir);
         }
 
-        public string GetDirectoryForPackage(string packageName, string packageVersion = null) =>
+        public string GetDirectoryForPackage(string packageName, SemanticVersion packageVersion = null) =>
             packageVersion == null
             ? Path.Combine(PackagesDir, packageName)
-            : Path.Combine(PackagesDir, packageName, packageVersion);
+            : Path.Combine(PackagesDir, packageName, packageVersion.ToString());
 
         public string GetBinFile(string fileName) =>
             Path.Combine(binDir, fileName.Replace('/', Path.DirectorySeparatorChar));

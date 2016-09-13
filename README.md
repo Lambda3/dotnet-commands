@@ -39,17 +39,18 @@ Simply run `dotnet commands` to see the options, which are similar to this:
 
 ````
 .NET Commands
+
   Usage:
-    dotnet commands install <command> [--force] [--pre] [--verbose]
+    dotnet commands install <command>[@<version>] [--force] [--pre] [--verbose]
     dotnet commands uninstall <command> [ --verbose]
     dotnet commands update (<command> | all) [--pre] [--verbose]
-    dotnet commands list [--verbose]
-    dotnet commands ls [--verbose]
+    dotnet commands (list|ls) [--verbose]
     dotnet commands --help
     dotnet commands --version
+
   Options:
     --force                    Installs even if package was already installed. Optional.
-    --pre                      Include pre-release versions. Optional.
+    --pre                      Include pre-release versions. Ignored if version is supplied. Optional.
     --verbose                  Verbose. Optional.
     --help -h                  Show this screen.
     --version -v               Show version.

@@ -6,6 +6,7 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
+using NuGet.Versioning;
 
 namespace DotNetCommands
 {
@@ -17,7 +18,7 @@ namespace DotNetCommands
             this.commandDirectory = commandDirectory;
         }
 
-        public async Task<bool> InstallAsync(string packageName, bool force, bool includePreRelease)
+        public async Task<bool> InstallAsync(string packageName, SemanticVersion packageVersion, bool force, bool includePreRelease)
         {
             WriteLineIfVerbose($"Installing {packageName}...");
             PackageInfo packageInfo;
@@ -25,7 +26,7 @@ namespace DotNetCommands
             {
                 using (var downloader = new NugetDownloader(commandDirectory))
                 {
-                    packageInfo = await downloader.DownloadAndExtractNugetAsync(packageName, force, includePreRelease);
+                    packageInfo = await downloader.DownloadAndExtractNugetAsync(packageName, packageVersion, force, includePreRelease);
                     if (packageInfo == null) return false;
                 }
             }

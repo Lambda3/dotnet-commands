@@ -25,7 +25,7 @@ namespace IntegrationTests
             commandDirectoryCleanup = new CommandDirectoryCleanup();
             baseDir = commandDirectoryCleanup.CommandDirectory.BaseDir;
             installer = new Installer(commandDirectoryCleanup.CommandDirectory);
-            installed = await installer.InstallAsync(packageName, force: false, includePreRelease: false);
+            installed = await installer.InstallAsync(packageName, null, force: false, includePreRelease: false);
             installed.Should().BeTrue();
         }
 

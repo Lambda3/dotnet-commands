@@ -2,7 +2,7 @@
   "profiles": {
     "dotnet-commands": {
       "commandName": "Project",
-      "commandLineArgs": "install dotnet-foo"
+      "commandLineArgs": "install dotnet-foo@1.0.1"
     }
   }
 }

@@ -1,0 +1,1 @@
+﻿[assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "CC0061:Async method can be terminating with 'Async' name.", Justification = "Tests don't need to end in Async.")]

@@ -16,7 +16,7 @@ namespace DotNetCommands
     public sealed class NugetDownloader : IDisposable
     {
         private readonly CommandDirectory commandDirectory;
-        private IList<SourceInfo> sourceInfos;
+        private readonly IList<SourceInfo> sourceInfos;
 
         public NugetDownloader(CommandDirectory commandDirectory)
         {
@@ -59,6 +59,39 @@ namespace DotNetCommands
             return (await GetLatestVersionAndSourceInfoAsync(packageName, includePreRelease))?.Version.ToString();
         }
 
+        private async Task<NugetVersion> GetSpecificVersionAndSourceInfoAsync(string packageName, SemanticVersion packageVersion)
+        {
+            foreach (var sourceInfo in sourceInfos)
+            {
+                WriteLineIfVerbose($"Searching for '{packageName}@{packageVersion.ToString()}' on '{sourceInfo.Source.Name}'...");
+                NugetVersion latestNugetVersion;
+                try
+                {
+                    latestNugetVersion = await sourceInfo.GetPackageAsync(packageName, packageVersion, true);
+                }
+                catch (Exception ex)
+                {
+                    WriteLine($"Error when getting '{packageName}@{packageVersion.ToString()}'. Source used: '{sourceInfo.Source.Name}'.");
+                    WriteLineIfVerbose($"Error details: {ex.ToString()}'.");
+                    return null;
+                }
+                if (latestNugetVersion == null)
+                {
+                    WriteLineIfVerbose($"Could not get a version for '{packageName}@{packageVersion.ToString()}' on '{sourceInfo.Source.Name}'.");
+                    continue;
+                }
+                else
+                {
+                    WriteLineIfVerbose($"Found version '{latestNugetVersion.Version}' for '{packageName}@{packageVersion.ToString()}' on '{sourceInfo.Source.Name}'.");
+                    return latestNugetVersion;
+                }
+            }
+            WriteLine($"Package '{packageName}' not found. Sources used:");
+            foreach (var source in sourceInfos.Select(p => p.Source))
+                WriteLine($" - {source.Name}: {source.Source}");
+            return null;
+        }
+
         private async Task<NugetVersion> GetLatestVersionAndSourceInfoAsync(string packageName, bool includePreRelease)
         {
             NugetVersion currentNugetVersion = null;
@@ -68,7 +101,7 @@ namespace DotNetCommands
                 NugetVersion latestNugetVersion;
                 try
                 {
-                    latestNugetVersion = await sourceInfo.GetLatestVersionAsync(packageName, includePreRelease);
+                    latestNugetVersion = await sourceInfo.GetPackageAsync(packageName, null, includePreRelease);
                 }
                 catch (Exception ex)
                 {
@@ -103,17 +136,20 @@ namespace DotNetCommands
         /// Downloads the specified nupkg and extracts it to a directory
         /// </summary>
         /// <param name="packageName">The command to download, i.e. "dotnet-foo".</param>
+        /// <param name="packageVersion">The version to install. If null, then latest will be used.</param>
         /// <param name="force">Force the download be made again if it was already downloaded earlier.</param>
         /// <param name="includePreRelease">Allow pre-release versions.</param>
         /// <returns>The directory where it is extracted</returns>
-        public async Task<PackageInfo> DownloadAndExtractNugetAsync(string packageName, bool force, bool includePreRelease)
+        public async Task<PackageInfo> DownloadAndExtractNugetAsync(string packageName, SemanticVersion packageVersion, bool force, bool includePreRelease)
         {
             if (!sourceInfos.Any())
             {
                 WriteLine("No NuGet sources found.");
                 return null;
             }
-            var nugetVersion = await GetLatestVersionAndSourceInfoAsync(packageName, includePreRelease);
+            var nugetVersion = packageVersion == null
+                ? await GetLatestVersionAndSourceInfoAsync(packageName, includePreRelease)
+                : await GetSpecificVersionAndSourceInfoAsync(packageName, packageVersion);
             if (nugetVersion == null)
             {
                 WriteLineIfVerbose($"Could not get latest version for package '{packageName}'.");
@@ -134,7 +170,7 @@ namespace DotNetCommands
             WriteLineIfVerbose($"Saving to '{tempFilePath}'.");
             using (var tempFileStream = File.OpenWrite(tempFilePath))
                 await nupkgResponse.Content.CopyToAsync(tempFileStream);
-            var destinationDir = commandDirectory.GetDirectoryForPackage(nugetVersion.PackageName, nugetVersion.Version.ToString());
+            var destinationDir = commandDirectory.GetDirectoryForPackage(nugetVersion.PackageName, nugetVersion.Version);
             if (force)
                 Directory.Delete(destinationDir, true);
             var shouldExtract = force || !Directory.Exists(destinationDir);
@@ -185,6 +221,14 @@ namespace DotNetCommands
             public string Id { get; set; }
             [JsonProperty("version")]
             public string Version { get; set; }
+            [JsonProperty("versions")]
+            public IList<ServiceDataVersion> Versions { get; set; }
+        }
+
+        private class ServiceDataVersion
+        {
+            [JsonProperty("version")]
+            public string Version { get; set; }
         }
 
         private class SourceInfo : IDisposable
@@ -213,7 +257,7 @@ namespace DotNetCommands
                 return feed;
             }
 
-            public async Task<NugetVersion> GetLatestVersionAsync(string packageName, bool includePreRelease)
+            public async Task<NugetVersion> GetPackageAsync(string packageName, SemanticVersion packageVersion, bool includePreRelease)
             {
                 var currentFeed = await GetFeedAsync();
                 if (currentFeed == null)
@@ -254,14 +298,27 @@ namespace DotNetCommands
                 var serviceData = supportsQueryById
                     ? service.Data.FirstOrDefault()
                     : service.Data.FirstOrDefault(sd => string.Compare(sd.Id, packageName, true) == 0);
-                var version = serviceData?.Version;
-                if (version == null)
+                var latest = serviceData?.Version;
+                if (latest == null)
                 {
-                    WriteLineIfVerbose($"There was no version info for '{packageName}' on '{Source.Name}'.");
+                    WriteLineIfVerbose($"There was no package info for '{packageName}' on '{Source.Name}'.");
                     return null;
                 }
-                WriteLineIfVerbose($"Found version {version}.");
-                var currentSemanticVersion = SemanticVersion.Parse(version);
+                WriteLineIfVerbose($"Found package '{packageName}' with latest version {latest}.");
+                var currentSemanticVersion = SemanticVersion.Parse(latest);
+                if (packageVersion != null)
+                {
+                    var versionExists = serviceData.Versions.Any(v => v.Version == packageVersion.ToString());
+                    if (versionExists)
+                    {
+                        currentSemanticVersion = packageVersion;
+                    }
+                    else
+                    {
+                        WriteLineIfVerbose($"Version '{packageVersion.ToString()}' was not found for '{packageName}' on '{Source.Name}'.");
+                        return null;
+                    }
+                }
                 var nugetVersion = new NugetVersion(currentSemanticVersion, this, serviceData.Id);
                 return nugetVersion;
             }

@@ -24,9 +24,9 @@ namespace IntegrationTests
             commandDirectoryCleanup = new CommandDirectoryCleanup();
             var baseDir = commandDirectoryCleanup.CommandDirectory.BaseDir;
             var installer = new Installer(commandDirectoryCleanup.CommandDirectory);
-            var installed = await installer.InstallAsync("dotnet-foo", force: false, includePreRelease: false);
+            var installed = await installer.InstallAsync("dotnet-foo", null, force: false, includePreRelease: false);
             installed.Should().BeTrue();
-            installed = await installer.InstallAsync("dotnet-bar", force: false, includePreRelease: false);
+            installed = await installer.InstallAsync("dotnet-bar", null, force: false, includePreRelease: false);
             installed.Should().BeTrue();
             logger = new Mock<Action<string>>();
             Logger.IsVerbose = false;
@@ -47,7 +47,7 @@ namespace IntegrationTests
         {
 #pragma warning disable CC0031 // Check for null before calling a delegate
             logger.Verify(l => l(
-$"dotnet-bar (1.0.2){Environment.NewLine}  dotnet-bar-aa{Environment.NewLine}  dotnet-bar-bb{Environment.NewLine}dotnet-foo (1.0.1){Environment.NewLine}"
+$"dotnet-bar (1.0.2){Environment.NewLine}  dotnet-bar-aa{Environment.NewLine}  dotnet-bar-bb{Environment.NewLine}dotnet-foo (1.0.2){Environment.NewLine}"
             ), Times.Once);
 #pragma warning restore CC0031 // Check for null before calling a delegate
         }

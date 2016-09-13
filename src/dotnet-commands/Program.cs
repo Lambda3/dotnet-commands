@@ -18,7 +18,7 @@ namespace DotNetCommands
             const string usage = @".NET Commands
 
   Usage:
-    dotnet commands install <command> [--force] [--pre] [--verbose]
+    dotnet commands install <command>[@<version>] [--force] [--pre] [--verbose]
     dotnet commands uninstall <command> [ --verbose]
     dotnet commands update (<command> | all) [--pre] [--verbose]
     dotnet commands (list|ls) [--verbose]
@@ -27,7 +27,7 @@ namespace DotNetCommands
 
   Options:
     --force                    Installs even if package was already installed. Optional.
-    --pre                      Include pre-release versions. Optional.
+    --pre                      Include pre-release versions. Ignored if version is supplied. Optional.
     --verbose                  Verbose. Optional.
     --help -h                  Show this screen.
     --version -v               Show version.
@@ -38,7 +38,7 @@ namespace DotNetCommands
             if (args.Length == 1 && args[0] == "bootstrap")
             {
                 var installer = new Installer(commandDirectory);
-                var success = await installer.InstallAsync("dotnet-commands", force: true, includePreRelease: true);
+                var success = await installer.InstallAsync("dotnet-commands", null, force: true, includePreRelease: true);
                 return (int)(success ? ExitCodes.Success : ExitCodes.BootstrapFailed);
             }
             var argsWithRun = args;
@@ -59,16 +59,37 @@ namespace DotNetCommands
             {
                 WriteLineIfVerbose("Request to update .NET Commands.");
                 var updater = new Updater(commandDirectory);
-                var updateNeeded = await updater.IsUpdateNeeded(command, arguments["--pre"].IsTrue);
+                var updateNeeded = await updater.IsUpdateNeededAsync(command, arguments["--pre"].IsTrue);
                 var exitCode = updateNeeded == Updater.UpdateNeeded.Yes ? ExitCodes.StartUpdate : ExitCodes.Success;
                 WriteLineIfVerbose($"Should update .NET Commands: {updateNeeded}, exit code is going to be {exitCode} ({(int)exitCode}).");
                 return (int)exitCode;
             }
             if (arguments["install"].IsTrue)
             {
-
+                var commandParts = command.Split('@');
+                NuGet.Versioning.SemanticVersion packageVersion = null;
+                switch (commandParts.Length)
+                {
+                    case 1:
+                        break;
+                    case 2:
+                        command = commandParts[0];
+                        try
+                        {
+                            packageVersion = NuGet.Versioning.SemanticVersion.Parse(commandParts[0]);
+                        }
+                        catch (ArgumentException)
+                        {
+                            Console.WriteLine($"Invalid version.\n{usage}");
+                            return (int)ExitCodes.InvalidVersion;
+                        }
+                        break;
+                    default:
+                        Console.WriteLine($"Invalid version.\n{usage}");
+                        return (int)ExitCodes.InvalidVersion;
+                }
                 var installer = new Installer(commandDirectory);
-                var success = await installer.InstallAsync(command, arguments["--force"].IsTrue, arguments["--pre"].IsTrue);
+                var success = await installer.InstallAsync(command, packageVersion, arguments["--force"].IsTrue, arguments["--pre"].IsTrue);
                 return (int)(success ? ExitCodes.Success : ExitCodes.InstallFailed);
             }
             if (arguments["uninstall"].IsTrue)
@@ -119,6 +140,7 @@ namespace DotNetCommands
             InstallFailed = 69,
             UninstallFailed = 70,
             CantUninstallDotNetCommands = 71,
+            InvalidVersion = 72,
             StartUpdate = 113
         }
     }
