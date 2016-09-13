@@ -171,9 +171,10 @@ namespace DotNetCommands
             using (var tempFileStream = File.OpenWrite(tempFilePath))
                 await nupkgResponse.Content.CopyToAsync(tempFileStream);
             var destinationDir = commandDirectory.GetDirectoryForPackage(nugetVersion.PackageName, nugetVersion.Version);
-            if (force)
+            var directoryExists = Directory.Exists(destinationDir);
+            if (force && directoryExists)
                 Directory.Delete(destinationDir, true);
-            var shouldExtract = force || !Directory.Exists(destinationDir);
+            var shouldExtract = force || !directoryExists;
             if (shouldExtract)
             {
                 WriteLineIfVerbose($"Extracting to '{destinationDir}'.");
