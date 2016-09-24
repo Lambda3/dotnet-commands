@@ -2,7 +2,7 @@ $ErrorActionPreference = "Stop"
 $releases = Invoke-WebRequest -UseBasicParsing https://github.com/Lambda3/dotnet-commands/releases.atom
 $uri="https://github.com/Lambda3/dotnet-commands/releases/download/$($([xml]$releases.Content).feed.entry[0].title)/dotnet-commands.zip"
 $outFile=[System.IO.Path]::GetTempFileName()
-Invoke-WebRequest -uri $uri -OutFile $outFile
+Invoke-WebRequest -UseBasicParsing -uri $uri -OutFile $outFile
 Add-Type -assembly System.IO.Compression.FileSystem
 $outDir = "$outFile-extracted"
 [System.IO.Compression.ZipFile]::ExtractToDirectory($outFile, $outDir)
